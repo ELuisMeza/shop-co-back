@@ -33,11 +33,6 @@ export class UpdateUserDto {
   @IsNotEmpty()
   type_document: string;
 
-  @ApiProperty({ example: 'https://example.com/avatar.jpg', description: 'Imagen de perfil del usuario' })
-  @IsString()
-  @IsOptional()
-  avatar_image?: string;
-
   @ApiProperty({ example: GlobalStatus.ACTIVE, description: 'Estado del usuario' })
   @IsEnum(GlobalStatus)
   @IsOptional()

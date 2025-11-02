@@ -34,12 +34,6 @@ export class ProductsEntity {
   @Column({ type: 'int', default: 0 })
   stock: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  main_image: string;
-
-  @Column({ type: 'text', nullable: true })
-  additional_images: string;
-
   @Column({ type: 'enum', enum: GlobalStatus, default: GlobalStatus.ACTIVE })
   status: GlobalStatus;
 

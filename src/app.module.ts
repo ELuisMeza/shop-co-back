@@ -8,6 +8,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { SellersModule } from './modules/sellers/sellers.module';
 import { ProductsModule } from './modules/products/products.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { PhotosProductsModule } from './modules/photos-products/photos-products.module';
 import { typeOrmConfig } from './config/database.config';
 
 @Module({
@@ -19,6 +20,7 @@ import { typeOrmConfig } from './config/database.config';
     RolesModule,
     SellersModule,
     ProductsModule,
+    PhotosProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

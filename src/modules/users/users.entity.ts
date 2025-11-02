@@ -41,9 +41,6 @@ export class UsersEntity {
   @Column({ type: 'varchar', length: 50, nullable: true })
   type_document: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  avatar_image: string;
-
   @Column({ type: 'varchar', length: 100, unique: true, nullable: true })
   username: string;
 

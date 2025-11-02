@@ -19,8 +19,8 @@ export class SellersEntity {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  logo_image: string;
+  @Column({ type: 'bytea', nullable: true })
+  logo_image: Buffer;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   ruc: string;

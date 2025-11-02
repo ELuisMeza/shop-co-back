@@ -10,8 +10,8 @@ export class UpdateProductDto {
 
   @ApiProperty({ example: 'Laptop ideal para trabajo y estudio', description: 'Descripción del producto' })
   @IsString()
-  @IsOptional()
-  description?: string;
+  @IsNotEmpty()
+  description: string;
 
   @ApiProperty({ example: 899.99, description: 'Precio del producto' })
   @IsNumber()

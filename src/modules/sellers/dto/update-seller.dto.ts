@@ -12,10 +12,13 @@ export class UpdateSellerDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ example: 'https://example.com/logo.jpg', description: 'URL del logo' })
-  @IsString()
-  @IsOptional()
-  logo_image?: string;
+  @ApiProperty({ 
+    type: 'string',
+    format: 'binary',
+    description: 'Logo de la tienda (archivo de imagen)',
+    required: false
+  })
+  logo_image?: any; // Express.Multer.File se maneja por @UploadedFile()
 
   @ApiProperty({ example: '20123456789', description: 'RUC de la empresa' })
   @IsString()

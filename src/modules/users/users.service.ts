@@ -40,7 +40,7 @@ export class UsersService {
   }
 
   async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<UsersEntity> {
-    const user = await this.getById(id);
+    await this.getById(id);
     await this.usersRepository.update(id, updateUserDto);
     return this.getById(id);
   }
