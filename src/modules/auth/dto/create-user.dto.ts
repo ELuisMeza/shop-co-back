@@ -1,7 +1,8 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { UpdateUserDto } from "./update-user.dto";
-import { IsEmail, IsString } from "class-validator";
+import { ApiProperty, IntersectionType } from "@nestjs/swagger";
+import { UpdateUserDto } from "../../users/dto/update-user.dto";
+import { IsEmail, IsString, IsUUID } from "class-validator";
 import { IsNotEmpty } from "class-validator";
+import { UpdateSellerDto } from "src/modules/sellers/dto/update-seller.dto";
 
 export class CreateUserDto extends UpdateUserDto {
   @ApiProperty({ example: 'juan.perez@example.com', description: 'Email del usuario' })
@@ -14,3 +15,8 @@ export class CreateUserDto extends UpdateUserDto {
   @IsNotEmpty()
   password: string;
 }
+
+export class CreateSellerDto extends IntersectionType(
+  CreateUserDto,
+  UpdateSellerDto,
+) {}

@@ -1,7 +1,6 @@
 import { Body, Controller, Get, HttpStatus, HttpCode, Param, Post, Put, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SellersService } from './sellers.service';
-import { CreateSellerDto } from './dto/create-seller.dto';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiParam, ApiConsumes } from '@nestjs/swagger';
 import { UpdateSellerDto } from './dto/update-seller.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -16,20 +15,6 @@ type MulterFile = Express.Multer.File;
 @ApiBearerAuth()  
 export class SellersController {
   constructor(private readonly sellersService: SellersService) {}
-
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(FileInterceptor('logo_image'))
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Crear vendedor' })
-  @ApiBody({ type: CreateSellerDto })
-  @ApiOkResponse({ description: 'Retorna el vendedor creado' })
-  async createSeller(
-    @Body() createSellerDto: CreateSellerDto,
-    @UploadedFile() logoFile?: MulterFile,
-  ) {
-    return this.sellersService.createSeller(createSellerDto, logoFile);
-  }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)

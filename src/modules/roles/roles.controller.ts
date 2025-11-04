@@ -21,13 +21,5 @@ export class RolesController {
     return this.rolesService.getAll();
   }
 
-  @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Obtener rol por ID' })
-  @ApiParam({ name: 'id', description: 'ID del rol' })
-  @ApiOkResponse({ description: 'Retorna el rol encontrado' })
-  async getRoleById(@Param('id') id: string) {
-    return this.rolesService.getById(id);
-  }
 }
 

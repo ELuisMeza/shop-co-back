@@ -2,8 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { SellersEntity } from './sellers.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateSellerDto } from './dto/create-seller.dto';
 import { UpdateSellerDto } from './dto/update-seller.dto';
+import { CreateSellerDto } from '../auth/dto/create-user.dto';
 
 @Injectable()
 export class SellersService {
@@ -12,7 +12,10 @@ export class SellersService {
     private readonly sellersRepository: Repository<SellersEntity>,
   ) {}
 
-  async createSeller(createSellerDto: CreateSellerDto, logoFile?: Express.Multer.File): Promise<SellersEntity> {
+  async createSeller(createSellerDto: CreateSellerDto, user_id: string, logoFile?: Express.Multer.File): Promise<SellersEntity> {
+    // Extraer solo los campos del seller (excluir campos de usuario como email, password, etc.)
+    const { shop_name, description, ruc, business_address } = createSellerDto;
+    
     // Si se envía un archivo, validar y procesar
     if (logoFile) {
       // Validar que sea una imagen
@@ -27,17 +30,26 @@ export class SellersService {
         throw new BadRequestException('El archivo no puede ser mayor a 5MB');
       }
 
-      // Agregar el buffer de la imagen al DTO
-      const sellerData = {
-        ...createSellerDto,
+      // Crear seller con logo
+      const seller = this.sellersRepository.create({
+        user_id,
+        shop_name,
+        description,
+        ruc,
+        business_address,
         logo_image: logoFile.buffer,
-      };
-      const seller = this.sellersRepository.create(sellerData);
+      });
       return this.sellersRepository.save(seller);
     }
 
     // Si no hay archivo, crear normalmente
-    const seller = this.sellersRepository.create(createSellerDto);
+    const seller = this.sellersRepository.create({
+      user_id,
+      shop_name,
+      description,
+      ruc,
+      business_address,
+    });
     return this.sellersRepository.save(seller);
   }
 
@@ -52,6 +64,15 @@ export class SellersService {
   async updateSeller(id: string, updateSellerDto: UpdateSellerDto, logoFile?: Express.Multer.File): Promise<SellersEntity> {
     const seller = await this.getById(id);
     
+    // Extraer solo los campos del seller (excluir logo_image que viene como File en el DTO)
+    const { shop_name, description, ruc, business_address } = updateSellerDto;
+    const updateData: Partial<SellersEntity> = {
+      shop_name,
+      description,
+      ruc,
+      business_address,
+    };
+    
     // Si se envía un archivo, validar y procesar
     if (logoFile) {
       // Validar que sea una imagen
@@ -66,17 +87,11 @@ export class SellersService {
         throw new BadRequestException('El archivo no puede ser mayor a 5MB');
       }
 
-      // Agregar el buffer de la imagen al DTO
-      const updateData = {
-        ...updateSellerDto,
-        logo_image: logoFile.buffer,
-      };
-      await this.sellersRepository.update(id, updateData);
-    } else {
-      // Si no hay archivo, actualizar normalmente (sin modificar logo_image si no viene en el DTO)
-      await this.sellersRepository.update(id, updateSellerDto);
+      // Agregar el buffer de la imagen
+      updateData.logo_image = logoFile.buffer;
     }
     
+    await this.sellersRepository.update(id, updateData);
     return this.getById(id);
   }
 

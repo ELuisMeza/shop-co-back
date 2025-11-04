@@ -11,7 +11,7 @@ export class UsersEntity {
       // Genera username basado en name.last_name_father
       const nameNormalized = this.name.toLowerCase().trim();
       const lastNameNormalized = this.last_name_father.toLowerCase().trim();
-      this.username = `${nameNormalized}.${lastNameNormalized}`;
+      this.username = `${nameNormalized}.${lastNameNormalized}.${this.num_document}`;
     }
   }
   @PrimaryGeneratedColumn('uuid')
@@ -53,13 +53,6 @@ export class UsersEntity {
   @ManyToOne(() => RolesEntity, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
   @JoinColumn({ name: 'role_id' })
   role: RolesEntity;
-
-  @Column({ type: 'uuid', nullable: true })
-  seller_id: string;
-
-  @ManyToOne(() => SellersEntity, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
-  @JoinColumn({ name: 'seller_id' })
-  seller: SellersEntity;
 
   @Column({ type: 'timestamp', nullable: true })
   last_login: Date;

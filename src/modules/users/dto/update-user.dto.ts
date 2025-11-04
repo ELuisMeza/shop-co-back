@@ -33,8 +33,4 @@ export class UpdateUserDto {
   @IsNotEmpty()
   type_document: string;
 
-  @ApiProperty({ example: GlobalStatus.ACTIVE, description: 'Estado del usuario' })
-  @IsEnum(GlobalStatus)
-  @IsOptional()
-  status?: GlobalStatus;
 } 
