@@ -27,8 +27,6 @@ export class SellersController {
 
   @Put(':id')
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('logo_image'))
-  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Actualizar vendedor por ID' })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
   @ApiBody({ type: UpdateSellerDto })
@@ -36,9 +34,8 @@ export class SellersController {
   async updateSellerById(
     @Param('id') id: string,
     @Body() updateSellerDto: UpdateSellerDto,
-    @UploadedFile() logoFile?: MulterFile,
   ) {
-    return this.sellersService.updateSeller(id, updateSellerDto, logoFile);
+    return this.sellersService.updateSeller(id, updateSellerDto);
   }
 }
 

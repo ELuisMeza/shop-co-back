@@ -1,9 +1,8 @@
 import { GlobalStatus } from "src/globals/enums/global-status.enum";
-import { Column, PrimaryGeneratedColumn, Entity, ManyToOne, JoinColumn } from "typeorm";
-import { ProductsEntity } from "../products/products.entity";
+import { Column, PrimaryGeneratedColumn, Entity } from "typeorm";
 
-@Entity({ name: 'photos_products' })
-export class PhotosProductsEntity {
+@Entity({ name: 'files' })
+export class FilesEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -16,12 +15,11 @@ export class PhotosProductsEntity {
   @Column({ type: 'bytea', nullable: false })
   data: Buffer;
 
-  @Column({ type: 'uuid', nullable: true })
-  product_id: string;
+  @Column({ type: 'uuid', nullable: false })
+  parent_id: string;
 
-  @ManyToOne(() => ProductsEntity, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })
-  @JoinColumn({ name: 'product_id' })
-  product: ProductsEntity;
+  @Column({ type: 'varchar', length: 100, nullable: false })
+  parent_type: string;
 
   @Column({ type: 'bool', default: false, nullable: true })
   is_main: boolean;

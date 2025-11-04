@@ -1,6 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Allow, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
-type MulterFile = Express.Multer.File;
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class UpdateSellerDto {
   @ApiProperty({ example: 'Mi Tienda Online', description: 'Nombre de la tienda' })
@@ -12,14 +11,6 @@ export class UpdateSellerDto {
   @IsString()
   @IsOptional()
   description?: string;
-
-  @ApiProperty({ 
-    type: 'string',
-    format: 'binary',
-    description: 'Logo de la tienda (archivo de imagen)',
-  })
-  @Allow()
-  logo_image?: MulterFile;
 
   @ApiProperty({ example: '20123456789', description: 'RUC de la empresa' })
   @IsString()

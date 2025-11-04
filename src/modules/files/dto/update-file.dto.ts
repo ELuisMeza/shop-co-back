@@ -2,10 +2,10 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional, IsBoolean, IsEnum } from "class-validator";
 import { GlobalStatus } from "src/globals/enums/global-status.enum";
 
-export class UpdatePhotoProductDto {
+export class UpdateFileDto {
   @ApiProperty({ 
     example: false, 
-    description: 'Indica si es la imagen principal',
+    description: 'Indica si es el archivo principal',
     required: false 
   })
   @IsBoolean()
@@ -14,7 +14,7 @@ export class UpdatePhotoProductDto {
 
   @ApiProperty({ 
     example: 'active', 
-    description: 'Estado de la foto',
+    description: 'Estado del archivo',
     enum: GlobalStatus,
     required: false 
   })
