@@ -5,12 +5,14 @@ import { Repository } from 'typeorm';
 import { UpdateFileDto } from './dto/update-file.dto';
 import { GlobalStatus } from 'src/globals/enums/global-status.enum';
 import { UploadFilesData } from './dto/files.dto';
+import { StorageService } from './storage.service';
 
 @Injectable()
 export class FilesService {
   constructor(
     @InjectRepository(FilesEntity)
     private readonly filesRepository: Repository<FilesEntity>,
+    private readonly storageService: StorageService,
   ) {}
 
   async getById(id: string): Promise<FilesEntity> {
@@ -21,6 +23,19 @@ export class FilesService {
       throw new NotFoundException('Archivo no encontrado');
     }
     return file;
+  }
+
+  /**
+   * Obtiene el buffer del archivo desde el sistema de archivos
+   * @param id ID del archivo
+   * @returns Buffer del archivo
+   */
+  async getFileBuffer(id: string): Promise<Buffer> {
+    const file = await this.getById(id);
+    if (!file.path_file) {
+      throw new NotFoundException('Ruta del archivo no encontrada');
+    }
+    return this.storageService.getFile(file.path_file);
   }
 
   async getByParentIdAndActive(parentId: string, parentType: string): Promise<FilesEntity[]> {
@@ -94,10 +109,13 @@ export class FilesService {
         );
       }
 
+      // Guardar archivo en el sistema de archivos
+      const filePath = await this.storageService.saveFile(file, parent_id);
+
       const fileEntity = this.filesRepository.create({
         filename: file.originalname,
         mimetype: file.mimetype,
-        data: file.buffer,
+        path_file: filePath,
         parent_id,
         parent_type,
         is_main: is_main || false,

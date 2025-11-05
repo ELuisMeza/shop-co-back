@@ -78,8 +78,8 @@ export class ProductsService {
     const { page = 1, limit = 10, search, category_ids } = searchDto;
     const skip = (page - 1) * limit;
 
+    // Query principal para obtener productos
     const queryBuilder = this.productsRepository.createQueryBuilder('product')
-      .leftJoinAndSelect('product.seller', 'seller')
       .where('product.status = :status', { status: GlobalStatus.ACTIVE });
 
     // Filtro por búsqueda de nombre
@@ -94,6 +94,9 @@ export class ProductsService {
         .andWhere('pc.category_id IN (:...categoryIds)', { categoryIds: category_ids });
     }
 
+    // Usar distinct para evitar duplicados cuando hay múltiples categorías
+    queryBuilder.distinct(true);
+
     // Ordenar por fecha de creación (más recientes primero)
     queryBuilder.orderBy('product.created_at', 'DESC');
 
@@ -102,67 +105,103 @@ export class ProductsService {
 
     const [products, total] = await queryBuilder.getManyAndCount();
 
-    // Obtener imágenes y categorías para cada producto
-    const productsWithDetails = await Promise.all(
-      products.map(async (product) => {
-        // Obtener imagen principal o primera imagen
-        const mainImages = await this.filesRepository.find({
-          where: {
-            parent_id: product.id,
-            parent_type: 'product',
-            status: GlobalStatus.ACTIVE,
-            is_main: true,
-          },
-          order: { created_at: 'ASC' },
-          take: 1,
-        });
+    // Si no hay productos, retornar respuesta vacía
+    if (products.length === 0) {
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      };
+    }
 
-        // Si no hay imagen principal, obtener la primera imagen
-        let image = mainImages[0] || null;
-        if (!image) {
-          const firstImages = await this.filesRepository.find({
-            where: {
-              parent_id: product.id,
-              parent_type: 'product',
-              status: GlobalStatus.ACTIVE,
-            },
-            order: { created_at: 'ASC' },
-            take: 1,
-          });
-          image = firstImages[0] || null;
-        }
+    // Obtener todos los IDs de productos
+    const productIds = products.map(p => p.id);
 
-        // Obtener la categoría del producto
-        const productCategory = await this.productCategoriesRepository.findOne({
-          where: { product_id: product.id },
-          relations: ['category'],
-        });
+    // Obtener todas las imágenes principales en una sola consulta
+    const mainImagesQuery = this.filesRepository.createQueryBuilder('file')
+      .where('file.parent_id IN (:...productIds)', { productIds })
+      .andWhere('file.parent_type = :parentType', { parentType: 'product' })
+      .andWhere('file.status = :status', { status: GlobalStatus.ACTIVE })
+      .andWhere('file.is_main = :isMain', { isMain: true })
+      .select('file.parent_id', 'parent_id')
+      .addSelect('file.path_file', 'path_file')
+      .orderBy('file.parent_id', 'ASC')
+      .addOrderBy('file.created_at', 'ASC');
 
-        // Formatear la imagen si existe
-        const imageData = image ? {
-          id: image.id,
-          filename: image.filename,
-          mimetype: image.mimetype,
-          is_main: image.is_main,
-        } : null;
+    let mainImages = await mainImagesQuery.getRawMany();
 
-        // Formatear la categoría si existe
-        const categoryData = productCategory?.category ? {
-          id: productCategory.category.id,
-          name: productCategory.category.name,
-          description: productCategory.category.description,
-        } : null;
-
-        return {
-          ...product,
-          image: imageData,
-          category: categoryData,
-        };
-      })
+    // Si no hay imágenes principales, obtener las primeras imágenes disponibles
+    const productsWithoutMainImage = productIds.filter(
+      id => !mainImages.some((img: any) => img.parent_id === id)
     );
 
+    if (productsWithoutMainImage.length > 0) {
+      const firstImagesQuery = this.filesRepository.createQueryBuilder('file')
+        .where('file.parent_id IN (:...productIds)', { productIds: productsWithoutMainImage })
+        .andWhere('file.parent_type = :parentType', { parentType: 'product' })
+        .andWhere('file.status = :status', { status: GlobalStatus.ACTIVE })
+        .select('file.parent_id', 'parent_id')
+        .addSelect('file.path_file', 'path_file')
+        .orderBy('file.parent_id', 'ASC')
+        .addOrderBy('file.created_at', 'ASC');
+
+      const firstImages = await firstImagesQuery.getRawMany();
+      mainImages = [...mainImages, ...firstImages];
+    }
+
+    // Crear un mapa de imágenes por product_id (usar Map para obtener solo una imagen por producto)
+    const imagesMap = new Map<string, string>();
+    mainImages.forEach((img: any) => {
+      const productId = img.parent_id;
+      if (!imagesMap.has(productId)) {
+        imagesMap.set(productId, img.path_file);
+      }
+    });
+
+    // Obtener todas las categorías de los productos en una sola consulta
+    const categoriesQuery = this.productCategoriesRepository.createQueryBuilder('pc')
+      .innerJoin('categories', 'category', 'category.id = pc.category_id')
+      .where('pc.product_id IN (:...productIds)', { productIds })
+      .select('pc.product_id', 'product_id')
+      .addSelect('category.name', 'category_name')
+      .orderBy('pc.product_id', 'ASC')
+      .addOrderBy('category.name', 'ASC');
+
+    const productCategories = await categoriesQuery.getRawMany();
+
+    // Crear un mapa de categorías por product_id
+    const categoriesMap = new Map<string, string[]>();
+    productCategories.forEach((pc: any) => {
+      const productId = pc.product_id;
+      const categoryName = pc.category_name;
+      
+      if (!categoriesMap.has(productId)) {
+        categoriesMap.set(productId, []);
+      }
+      categoriesMap.get(productId)!.push(categoryName);
+    });
+
+    // Formatear la respuesta
+    const formattedProducts = products.map(product => ({
+      id: product.id,
+      seller_id: product.seller_id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      status: product.status,
+      created_at: product.created_at,
+      modified_at: product.modified_at,
+      image_path: imagesMap.get(product.id) || null,
+      categories: categoriesMap.get(product.id) || [],
+    }));
+
     return {
-      data: productsWithDetails,
+      data: formattedProducts,
       meta: {
         total,
         page,

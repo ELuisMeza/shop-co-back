@@ -127,8 +127,9 @@ export class FilesController {
     @Res() res: Response,
   ) {
     const file = await this.filesService.getById(id);
+    const fileBuffer = await this.filesService.getFileBuffer(id);
     res.setHeader('Content-Type', file.mimetype || 'image/jpeg');
-    res.send(file.data);
+    res.send(fileBuffer);
   }
 
   @Put(':id/deactivate')

@@ -2,6 +2,8 @@ import { DataSource } from 'typeorm';
 import * as https from 'https';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { promises as fs } from 'fs';
+import { randomUUID } from 'crypto';
 import { ProductsEntity } from '../modules/products/products.entity';
 import { FilesEntity } from '../modules/files/files.entity';
 import { SellersEntity } from '../modules/sellers/sellers.entity';
@@ -258,6 +260,37 @@ function getProductCategories(productName: string, description: string, category
   return assignedCategories;
 }
 
+// Función para guardar archivo en el sistema de archivos (similar a StorageService)
+async function saveFileToDisk(fileBuffer: Buffer, parentId: string, originalFilename: string): Promise<string> {
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  
+  // Crear directorio base si no existe
+  try {
+    await fs.access(uploadsDir);
+  } catch {
+    await fs.mkdir(uploadsDir, { recursive: true });
+  }
+
+  // Crear directorio del parent si no existe
+  const parentDir = path.join(uploadsDir, parentId);
+  try {
+    await fs.access(parentDir);
+  } catch {
+    await fs.mkdir(parentDir, { recursive: true });
+  }
+
+  // Generar nombre único para el archivo
+  const fileExtension = path.extname(originalFilename) || '.jpg';
+  const fileName = `${randomUUID()}${fileExtension}`;
+  const filePath = path.join(parentDir, fileName);
+
+  // Guardar archivo
+  await fs.writeFile(filePath, fileBuffer);
+
+  // Devolver ruta relativa para guardar en BD (ej: uploads/{parentId}/{fileName})
+  return path.join('uploads', parentId, fileName).replace(/\\/g, '/');
+}
+
 // Función para generar una URL de imagen usando Picsum Photos con categorías
 // Picsum es más confiable que Unsplash Source (deprecado)
 function getProductImageUrl(productName: string, index: number, width: number = 800, height: number = 600): string {
@@ -444,10 +477,17 @@ async function seedProducts() {
              imageBuffer = await downloadImage(imageUrl);
            }
 
+           // Guardar archivo en el sistema de archivos
+           const filePath = await saveFileToDisk(
+             imageBuffer,
+             savedProduct.id,
+             `product-${savedProduct.id}-main.jpg`
+           );
+
            const imageFile = filesRepository.create({
              filename: `product-${savedProduct.id}-main.jpg`,
              mimetype: 'image/jpeg',
-             data: imageBuffer,
+             path_file: filePath,
              parent_id: savedProduct.id,
              parent_type: 'product',
              is_main: true,
@@ -471,10 +511,17 @@ async function seedProducts() {
                  additionalImageBuffer = await downloadImage(additionalImageUrl);
                }
 
+               // Guardar archivo adicional en el sistema de archivos
+               const additionalFilePath = await saveFileToDisk(
+                 additionalImageBuffer,
+                 savedProduct.id,
+                 `product-${savedProduct.id}-${j + 1}.jpg`
+               );
+
                const additionalImageFile = filesRepository.create({
                  filename: `product-${savedProduct.id}-${j + 1}.jpg`,
                  mimetype: 'image/jpeg',
-                 data: additionalImageBuffer,
+                 path_file: additionalFilePath,
                  parent_id: savedProduct.id,
                  parent_type: 'product',
                  is_main: false,

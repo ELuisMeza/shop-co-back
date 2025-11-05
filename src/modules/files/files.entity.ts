@@ -12,8 +12,8 @@ export class FilesEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   mimetype: string;
 
-  @Column({ type: 'bytea', nullable: false })
-  data: Buffer;
+  @Column({ type: 'varchar', length: 255, nullable: false })
+  path_file: string;
 
   @Column({ type: 'uuid', nullable: false })
   parent_id: string;
