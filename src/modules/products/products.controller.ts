@@ -5,14 +5,15 @@ import { ApiOperation, ApiBody, ApiOkResponse, ApiParam, ApiBearerAuth } from '@
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { SearchProductsDto } from './dto/search-products.dto';
 
 @ApiTags('Productos')
 @Controller('products')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Crear producto' })
@@ -31,6 +32,8 @@ export class ProductsController {
     return this.productsService.getById(id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @Put(':id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Actualizar producto por ID' })
@@ -39,6 +42,15 @@ export class ProductsController {
   @ApiOkResponse({ description: 'Retorna el producto actualizado' })
   async updateProductById(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
     return this.productsService.updateProduct(id, updateProductDto);
+  }
+
+  @Post('search')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Buscar productos con paginación, filtros por nombre y categorías' })
+  @ApiBody({ type: SearchProductsDto })
+  @ApiOkResponse({ description: 'Retorna la lista de productos paginada con metadata' })
+  async searchProducts(@Body() searchDto: SearchProductsDto) {
+    return this.productsService.searchProducts(searchDto);
   }
 }
 

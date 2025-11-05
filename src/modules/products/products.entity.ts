@@ -15,13 +15,6 @@ export class ProductsEntity {
   @JoinColumn({ name: 'seller_id' })
   seller: SellersEntity;
 
-  @Column({ type: 'uuid', nullable: false })
-  category_id: string;
-
-  @ManyToOne(() => CategoriesEntity, { onDelete: 'SET NULL', onUpdate: 'CASCADE' })
-  @JoinColumn({ name: 'category_id' })
-  category: CategoriesEntity;
-
   @Column({ type: 'varchar', length: 150, nullable: false })
   name: string;
 

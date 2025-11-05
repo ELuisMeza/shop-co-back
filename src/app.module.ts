@@ -9,6 +9,7 @@ import { SellersModule } from './modules/sellers/sellers.module';
 import { ProductsModule } from './modules/products/products.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FilesModule } from './modules/files/files.module';
+import { ProductCategoriesModule } from './modules/product-categories/product-categories.module';
 import { typeOrmConfig } from './config/database.config';
 
 @Module({
@@ -20,6 +21,7 @@ import { typeOrmConfig } from './config/database.config';
     RolesModule,
     SellersModule,
     ProductsModule,
+    ProductCategoriesModule,
     FilesModule,
   ],
   controllers: [AppController],

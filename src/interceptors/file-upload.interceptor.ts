@@ -12,9 +12,9 @@ export class FileUploadInterceptor implements NestInterceptor {
     }
 
     // Validar tipo de archivo
-    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('El archivo debe ser una imagen (JPEG, PNG, GIF, WEBP)');
+      throw new BadRequestException('El archivo debe ser una imagen (JPEG, PNG)');
     }
 
     // Validar tamaño (máximo 10MB)
