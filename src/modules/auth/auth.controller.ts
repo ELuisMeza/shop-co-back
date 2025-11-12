@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { CreateSellerDto, CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from '../users/users.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadInterceptor } from '../../interceptors/file-upload.interceptor';
 type MulterFile = Express.Multer.File;
 
 @ApiTags('auth')
@@ -38,7 +39,7 @@ export class AuthController {
 
   @Post('register-seller')
   @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(FileInterceptor('logo_image'))
+  @UseInterceptors(FileInterceptor('logo_image'), FileUploadInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Crear vendedor' })
   @ApiBody({ type: CreateSellerDto })

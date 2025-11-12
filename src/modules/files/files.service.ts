@@ -5,7 +5,8 @@ import { Repository } from 'typeorm';
 import { UpdateFileDto } from './dto/update-file.dto';
 import { GlobalStatus } from 'src/globals/enums/global-status.enum';
 import { UploadFilesData } from './dto/files.dto';
-import { StorageService } from './storage.service';
+import { StorageService } from '../../storage/storage.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class FilesService {
@@ -35,7 +36,50 @@ export class FilesService {
     if (!file.path_file) {
       throw new NotFoundException('Ruta del archivo no encontrada');
     }
-    return this.storageService.getFile(file.path_file);
+    // path_file ahora contiene la ruta completa (carpeta/id.extensión)
+    // Extraer carpeta, ID y extensión de la ruta
+    const pathParts = file.path_file.split('/');
+    const folderName = pathParts[0];
+    const fileNameWithExt = pathParts[1];
+    const fileId = fileNameWithExt.split('.')[0];
+    
+    return this.storageService.getFile(fileId, file.mimetype, folderName);
+  }
+
+  /**
+   * Convierte el parent_type en un nombre de carpeta
+   * @param parentType Tipo de parent (product, seller, etc.)
+   * @returns Nombre de la carpeta (products, sellers, etc.)
+   */
+  private getFolderName(parentType: string): string {
+    // Mapeo de parent_type a nombre de carpeta
+    // Puedes agregar más mapeos aquí según necesites
+    const folderMap: { [key: string]: string } = {
+      'product': 'products',
+      'seller': 'sellers',
+      'user': 'users',
+      // Agregar más mapeos según sea necesario
+    };
+
+    // Si existe un mapeo, usarlo; si no, usar el parentType como carpeta (pluralizado)
+    return folderMap[parentType] || `${parentType}s`;
+  }
+
+  /**
+   * Obtiene la extensión de archivo basándose en el mimetype
+   * @param mimetype Tipo MIME del archivo
+   * @returns Extensión del archivo (ej: .jpg, .png, etc.)
+   */
+  private getExtensionFromMimeType(mimetype: string): string {
+    const extensionMap: { [key: string]: string } = {
+      'image/jpeg': '.jpg',
+      'image/jpg': '.jpg',
+      'image/png': '.png',
+      'image/gif': '.gif',
+      'image/webp': '.webp',
+    };
+
+    return extensionMap[mimetype] || '.jpg';
   }
 
   async getByParentIdAndActive(parentId: string, parentType: string): Promise<FilesEntity[]> {
@@ -93,29 +137,27 @@ export class FilesService {
         throw new BadRequestException('Uno de los archivos no es válido');
       }
 
-      // Validar que sea una imagen
-      const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!allowedMimeTypes.includes(file.mimetype)) {
-        throw new BadRequestException(
-          `El archivo ${file.originalname} debe ser una imagen (JPEG, PNG, GIF, WEBP)`
-        );
-      }
+      // La validación de tipo y tamaño se hace en el interceptor
+      // Generar ID único para el archivo
+      const fileId = randomUUID();
 
-      // Validar tamaño (máximo 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        throw new BadRequestException(
-          `El archivo ${file.originalname} no puede ser mayor a 10MB`
-        );
-      }
+      // Usar parent_type como nombre de carpeta (ej: 'product' -> 'products', 'seller' -> 'sellers')
+      // La carpeta se creará automáticamente si no existe
+      const folderName = this.getFolderName(parent_type);
 
-      // Guardar archivo en el sistema de archivos
-      const filePath = await this.storageService.saveFile(file, parent_id);
+      // Guardar archivo en el sistema de archivos usando el ID y folderName
+      await this.storageService.saveFile(file, fileId, folderName);
 
+      // Construir la ruta completa: carpeta/id.extensión
+      const fileExtension = this.getExtensionFromMimeType(file.mimetype);
+      const fullPath = `${folderName}/${fileId}${fileExtension}`;
+
+      // Crear entidad con el ID generado y guardar la ruta completa en path_file
       const fileEntity = this.filesRepository.create({
+        id: fileId,
         filename: file.originalname,
         mimetype: file.mimetype,
-        path_file: filePath,
+        path_file: fullPath, // Guardamos la ruta completa: carpeta/id.extensión
         parent_id,
         parent_type,
         is_main: is_main || false,

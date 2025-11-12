@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpStatus, HttpCode, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, HttpCode, Param, Post, Put, UseGuards, NotFoundException } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
@@ -29,6 +29,11 @@ export class ProductsController {
   @ApiParam({ name: 'id', description: 'ID del producto' })
   @ApiOkResponse({ description: 'Retorna el producto encontrado' })
   async getProductById(@Param('id') id: string) {
+    // Validar que el ID sea un UUID válido (sin extensiones de archivo)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      throw new NotFoundException('Producto no encontrado');
+    }
     return this.productsService.getById(id);
   }
 

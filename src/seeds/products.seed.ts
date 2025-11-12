@@ -261,8 +261,10 @@ function getProductCategories(productName: string, description: string, category
 }
 
 // Función para guardar archivo en el sistema de archivos (similar a StorageService)
-async function saveFileToDisk(fileBuffer: Buffer, parentId: string, originalFilename: string): Promise<string> {
+// Guarda en uploads/products/ y retorna solo el ID del archivo
+async function saveFileToDisk(fileBuffer: Buffer, fileId: string, originalFilename: string): Promise<string> {
   const uploadsDir = path.join(process.cwd(), 'uploads');
+  const productsDir = path.join(uploadsDir, 'products');
   
   // Crear directorio base si no existe
   try {
@@ -271,24 +273,25 @@ async function saveFileToDisk(fileBuffer: Buffer, parentId: string, originalFile
     await fs.mkdir(uploadsDir, { recursive: true });
   }
 
-  // Crear directorio del parent si no existe
-  const parentDir = path.join(uploadsDir, parentId);
+  // Crear directorio products si no existe
   try {
-    await fs.access(parentDir);
+    await fs.access(productsDir);
   } catch {
-    await fs.mkdir(parentDir, { recursive: true });
+    await fs.mkdir(productsDir, { recursive: true });
   }
 
-  // Generar nombre único para el archivo
+  // Obtener extensión del archivo original
   const fileExtension = path.extname(originalFilename) || '.jpg';
-  const fileName = `${randomUUID()}${fileExtension}`;
-  const filePath = path.join(parentDir, fileName);
+  
+  // Nombre del archivo será el ID con su extensión
+  const fileName = `${fileId}${fileExtension}`;
+  const filePath = path.join(productsDir, fileName);
 
-  // Guardar archivo
+  // Guardar archivo en uploads/products/
   await fs.writeFile(filePath, fileBuffer);
 
-  // Devolver ruta relativa para guardar en BD (ej: uploads/{parentId}/{fileName})
-  return path.join('uploads', parentId, fileName).replace(/\\/g, '/');
+  // Devolver solo el ID (que es el nombre del archivo sin extensión para guardar en BD)
+  return fileId;
 }
 
 // Función para generar una URL de imagen usando Picsum Photos con categorías
@@ -477,17 +480,24 @@ async function seedProducts() {
              imageBuffer = await downloadImage(imageUrl);
            }
 
+           // Generar ID único para el archivo
+           const mainImageId = randomUUID();
+           
            // Guardar archivo en el sistema de archivos
-           const filePath = await saveFileToDisk(
+           await saveFileToDisk(
              imageBuffer,
-             savedProduct.id,
+             mainImageId,
              `product-${savedProduct.id}-main.jpg`
            );
 
+           // Construir la ruta completa: products/id.jpg
+           const mainImagePath = `products/${mainImageId}.jpg`;
+
            const imageFile = filesRepository.create({
+             id: mainImageId,
              filename: `product-${savedProduct.id}-main.jpg`,
              mimetype: 'image/jpeg',
-             path_file: filePath,
+             path_file: mainImagePath, // Guardamos la ruta completa: carpeta/id.extensión
              parent_id: savedProduct.id,
              parent_type: 'product',
              is_main: true,
@@ -511,17 +521,24 @@ async function seedProducts() {
                  additionalImageBuffer = await downloadImage(additionalImageUrl);
                }
 
+               // Generar ID único para el archivo adicional
+               const additionalImageId = randomUUID();
+               
                // Guardar archivo adicional en el sistema de archivos
-               const additionalFilePath = await saveFileToDisk(
+               await saveFileToDisk(
                  additionalImageBuffer,
-                 savedProduct.id,
+                 additionalImageId,
                  `product-${savedProduct.id}-${j + 1}.jpg`
                );
 
+               // Construir la ruta completa: products/id.jpg
+               const additionalImagePath = `products/${additionalImageId}.jpg`;
+
                const additionalImageFile = filesRepository.create({
+                 id: additionalImageId,
                  filename: `product-${savedProduct.id}-${j + 1}.jpg`,
                  mimetype: 'image/jpeg',
-                 path_file: additionalFilePath,
+                 path_file: additionalImagePath, // Guardamos la ruta completa: carpeta/id.extensión
                  parent_id: savedProduct.id,
                  parent_type: 'product',
                  is_main: false,

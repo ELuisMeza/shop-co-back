@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ProductsEntity } from './products.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -75,16 +75,29 @@ export class ProductsService {
   }
 
   async searchProducts(searchDto: SearchProductsDto) {
-    const { page = 1, limit = 10, search, category_ids } = searchDto;
+    const { page = 1, limit = 10, search, category_ids, min_price, max_price } = searchDto;
     const skip = (page - 1) * limit;
+
+    if (min_price !== undefined && max_price !== undefined && min_price > max_price) {
+      throw new BadRequestException('El precio mínimo no puede ser mayor al precio máximo');
+    }
 
     // Query principal para obtener productos
     const queryBuilder = this.productsRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.seller', 'seller')
       .where('product.status = :status', { status: GlobalStatus.ACTIVE });
 
     // Filtro por búsqueda de nombre
     if (search) {
       queryBuilder.andWhere('product.name ILIKE :search', { search: `%${search}%` });
+    }
+
+    if (min_price !== undefined) {
+      queryBuilder.andWhere('product.price >= :min_price', { min_price });
+    }
+
+    if (max_price !== undefined) {
+      queryBuilder.andWhere('product.price <= :max_price', { max_price });
     }
 
     // Filtro por categorías usando la tabla intermedia product_categories
@@ -108,7 +121,7 @@ export class ProductsService {
     // Si no hay productos, retornar respuesta vacía
     if (products.length === 0) {
       return {
-        data: [],
+        products: [],
         meta: {
           total: 0,
           page,
@@ -154,11 +167,21 @@ export class ProductsService {
     }
 
     // Crear un mapa de imágenes por product_id (usar Map para obtener solo una imagen por producto)
-    const imagesMap = new Map<string, string>();
+    // path_file ahora contiene la ruta completa (carpeta/id.extensión), construir URL del endpoint /files/{id}
+    const imagesMap = new Map<string, string | null>();
     mainImages.forEach((img: any) => {
       const productId = img.parent_id;
       if (!imagesMap.has(productId)) {
-        imagesMap.set(productId, img.path_file);
+        // path_file contiene la ruta completa (ej: "products/uuid.jpg")
+        // Extraer el ID del archivo para construir la URL del endpoint
+        if (img.path_file) {
+          const pathParts = img.path_file.split('/');
+          const fileNameWithExt = pathParts[pathParts.length - 1];
+          const fileId = fileNameWithExt.split('.')[0];
+          imagesMap.set(productId, `uploads/${img.path_file}`);
+        } else {
+          imagesMap.set(productId, null);
+        }
       }
     });
 
@@ -189,6 +212,7 @@ export class ProductsService {
     const formattedProducts = products.map(product => ({
       id: product.id,
       seller_id: product.seller_id,
+      seller_name: product.seller.shop_name,
       name: product.name,
       description: product.description,
       price: product.price,
@@ -201,9 +225,9 @@ export class ProductsService {
     }));
 
     return {
-      data: formattedProducts,
+      products: formattedProducts,
       meta: {
-        total,
+        total: total,
         page,
         limit,
         totalPages: Math.ceil(total / limit),

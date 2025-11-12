@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString, IsInt, Min, IsArray, IsUUID } from "class-validator";
+import { IsOptional, IsString, IsInt, Min, IsArray, IsUUID, IsNumber } from "class-validator";
 import { Type } from "class-transformer";
 
 export class SearchProductsDto {
@@ -46,5 +46,29 @@ export class SearchProductsDto {
   @IsArray()
   @IsUUID('4', { each: true })
   category_ids?: string[];
+
+  @ApiProperty({
+    example: 100,
+    description: 'Precio mínimo del rango de búsqueda',
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  min_price?: number;
+
+  @ApiProperty({
+    example: 500,
+    description: 'Precio máximo del rango de búsqueda',
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  max_price?: number;
 }
 

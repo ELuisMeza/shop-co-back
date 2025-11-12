@@ -34,6 +34,7 @@ import {
   ApiTags
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { FileUploadInterceptor } from '../../interceptors/file-upload.interceptor';
 
 @ApiTags('Archivos')
 @Controller('files')
@@ -44,7 +45,7 @@ export class FilesController {
 
   @Post('upload')
   @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(AnyFilesInterceptor())
+  @UseInterceptors(AnyFilesInterceptor(), FileUploadInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Subir uno o múltiples archivos' })
   @ApiBody({ type: CreateFileDto })
