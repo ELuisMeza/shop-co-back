@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { ProductsEntity } from './products.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +11,8 @@ import { SearchProductsDto } from './dto/search-products.dto';
 import { FilesEntity } from '../files/files.entity';
 import { ProductCategoriesEntity } from '../product-categories/product-categories.entity';
 import { CategoriesEntity } from '../categories/categories.entity';
+import { FilesService } from '../files/files.service';
+import { ProductCategoriesService } from '../product-categories/product-categories.service';
 
 @Injectable()
 export class ProductsService {
@@ -19,10 +21,11 @@ export class ProductsService {
     private readonly productsRepository: Repository<ProductsEntity>,
     @InjectRepository(FilesEntity)
     private readonly filesRepository: Repository<FilesEntity>,
-    @InjectRepository(ProductCategoriesEntity)
-    private readonly productCategoriesRepository: Repository<ProductCategoriesEntity>,
+    @Inject(forwardRef(() => ProductCategoriesService))
+    private readonly productCategoriesService: ProductCategoriesService,
     private readonly sellersService: SellersService,
     private readonly categoriesService: CategoriesService,
+    private readonly filesService: FilesService,
   ) {}
 
   async createProduct(createProductDto: CreateProductDto): Promise<ProductsEntity> {
@@ -45,7 +48,7 @@ export class ProductsService {
     return product;
   }
 
-  async getById(id: string): Promise<ProductsEntity> {
+  async getById(id: string) {
     const product = await this.productsRepository.findOne({ 
       where: { id },
       relations: ['seller']
@@ -53,25 +56,19 @@ export class ProductsService {
     if (!product) {
       throw new NotFoundException('Producto no encontrado');
     }
-    return product;
+
+    const images = await this.filesService.getByParentIdAndActive(product.id);
+    return {...product, images};
   }
 
   async updateProduct(id: string, updateProductDto: UpdateProductDto): Promise<ProductsEntity> {
-    const product = await this.getById(id);
-    await this.productsRepository.update(id, updateProductDto);
-    return this.getById(id);
-  }
-  
-  async activateProduct(id: string): Promise<ProductsEntity> {
-    const product = await this.getById(id);
-    await this.productsRepository.update(id, { status: GlobalStatus.ACTIVE });
-    return this.getById(id);
-  }
-
-  async deactivateProduct(id: string): Promise<ProductsEntity> {
-    const product = await this.getById(id);
-    await this.productsRepository.update(id, { status: GlobalStatus.INACTIVE });
-    return this.getById(id);
+    await this.getById(id);
+    try {
+      await this.productsRepository.update(id, updateProductDto);
+      return this.getById(id);
+    } catch (error) {
+      throw new BadRequestException('Error al actualizar el producto');
+    }
   }
 
   async searchProducts(searchDto: SearchProductsDto) {
@@ -82,44 +79,65 @@ export class ProductsService {
       throw new BadRequestException('El precio mínimo no puede ser mayor al precio máximo');
     }
 
-    // Query principal para obtener productos
-    const queryBuilder = this.productsRepository.createQueryBuilder('product')
-      .leftJoinAndSelect('product.seller', 'seller')
+    // Query builder base para filtros (sin JOINs que puedan duplicar)
+    const baseQueryBuilder = this.productsRepository.createQueryBuilder('product')
       .where('product.status = :status', { status: GlobalStatus.ACTIVE });
 
-    // Filtro por búsqueda de nombre
     if (search) {
-      queryBuilder.andWhere('product.name ILIKE :search', { search: `%${search}%` });
+      baseQueryBuilder.andWhere('product.name ILIKE :search', { search: `%${search}%` });
     }
 
     if (min_price !== undefined) {
-      queryBuilder.andWhere('product.price >= :min_price', { min_price });
+      baseQueryBuilder.andWhere('product.price >= :min_price', { min_price });
     }
 
     if (max_price !== undefined) {
-      queryBuilder.andWhere('product.price <= :max_price', { max_price });
+      baseQueryBuilder.andWhere('product.price <= :max_price', { max_price });
     }
 
-    // Filtro por categorías usando la tabla intermedia product_categories
     if (category_ids && category_ids.length > 0) {
-      queryBuilder
-        .innerJoin('product_categories', 'pc', 'pc.product_id = product.id')
-        .andWhere('pc.category_id IN (:...categoryIds)', { categoryIds: category_ids });
+       baseQueryBuilder.andWhere(
+        'product.id IN (SELECT DISTINCT pc.product_id FROM product_categories pc WHERE pc.category_id IN (:...categoryIds))',
+        { categoryIds: category_ids }
+      );
     }
 
-    // Usar distinct para evitar duplicados cuando hay múltiples categorías
-    queryBuilder.distinct(true);
+    // Obtener el total antes de aplicar paginación
+    const total = await baseQueryBuilder.getCount();
 
-    // Ordenar por fecha de creación (más recientes primero)
-    queryBuilder.orderBy('product.created_at', 'DESC');
+    // Primero obtener los IDs únicos de productos con paginación
+    const idsQueryBuilder = this.productsRepository.createQueryBuilder('product')
+      .select('product.id as id')
+      .where('product.status = :status', { status: GlobalStatus.ACTIVE });
 
-    // Paginación
-    queryBuilder.skip(skip).take(limit);
+    // Aplicar los mismos filtros
+    if (search) {
+      idsQueryBuilder.andWhere('product.name ILIKE :search', { search: `%${search}%` });
+    }
 
-    const [products, total] = await queryBuilder.getManyAndCount();
+    if (min_price !== undefined) {
+      idsQueryBuilder.andWhere('product.price >= :min_price', { min_price });
+    }
 
-    // Si no hay productos, retornar respuesta vacía
-    if (products.length === 0) {
+    if (max_price !== undefined) {
+      idsQueryBuilder.andWhere('product.price <= :max_price', { max_price });
+    }
+
+    if (category_ids && category_ids.length > 0) {
+      idsQueryBuilder.andWhere(
+        'product.id IN (SELECT DISTINCT pc.product_id FROM product_categories pc WHERE pc.category_id IN (:...categoryIds))',
+        { categoryIds: category_ids }
+      );
+    }
+
+    // Aplicar paginación solo a los IDs
+    idsQueryBuilder.skip(skip).take(limit);
+
+    const productIds = await idsQueryBuilder.getRawMany();
+    const ids = productIds.map(p => p.id);
+
+    // Si no hay IDs, retornar respuesta vacía
+    if (ids.length === 0) {
       return {
         products: [],
         meta: {
@@ -131,101 +149,37 @@ export class ProductsService {
       };
     }
 
-    // Obtener todos los IDs de productos
-    const productIds = products.map(p => p.id);
+    // Ahora obtener los datos completos solo para esos IDs
+    const queryBuilder = this.productsRepository.createQueryBuilder('product')
+      .leftJoin('product.seller', 'seller')
+      .leftJoin(FilesEntity, 'files', 'files.parent_id = product.id AND files.parent_type = :parentType AND files.is_main = true', { parentType: 'product' })
+      .select([
+        'product.id as id',
+        'product.seller_id as seller_id',
+        'seller.shop_name as seller_name',
+        'product.name as name',
+        'product.description as description',
+        'product.price as price',
+        'product.stock as stock',
+        'product.status as status',
+        'files.path_file as image_path',
+      ])
+      .where('product.id IN (:...ids)', { ids })
+      .orderBy('product.id', 'ASC');
 
-    // Obtener todas las imágenes principales en una sola consulta
-    const mainImagesQuery = this.filesRepository.createQueryBuilder('file')
-      .where('file.parent_id IN (:...productIds)', { productIds })
-      .andWhere('file.parent_type = :parentType', { parentType: 'product' })
-      .andWhere('file.status = :status', { status: GlobalStatus.ACTIVE })
-      .andWhere('file.is_main = :isMain', { isMain: true })
-      .select('file.parent_id', 'parent_id')
-      .addSelect('file.path_file', 'path_file')
-      .orderBy('file.parent_id', 'ASC')
-      .addOrderBy('file.created_at', 'ASC');
+    // Obtener los productos con getRawMany() ya que estamos usando select personalizado
+    const products = await queryBuilder.getRawMany();
 
-    let mainImages = await mainImagesQuery.getRawMany();
-
-    // Si no hay imágenes principales, obtener las primeras imágenes disponibles
-    const productsWithoutMainImage = productIds.filter(
-      id => !mainImages.some((img: any) => img.parent_id === id)
+    // Obtener las categorías para cada producto
+    const productWithCategories = await Promise.all(
+      products.map(async (product) => {
+        const categories = await this.productCategoriesService.getCategoriesByProductId(product.id);
+        return { ...product, categories: categories.map(category => category.name) };
+      })
     );
 
-    if (productsWithoutMainImage.length > 0) {
-      const firstImagesQuery = this.filesRepository.createQueryBuilder('file')
-        .where('file.parent_id IN (:...productIds)', { productIds: productsWithoutMainImage })
-        .andWhere('file.parent_type = :parentType', { parentType: 'product' })
-        .andWhere('file.status = :status', { status: GlobalStatus.ACTIVE })
-        .select('file.parent_id', 'parent_id')
-        .addSelect('file.path_file', 'path_file')
-        .orderBy('file.parent_id', 'ASC')
-        .addOrderBy('file.created_at', 'ASC');
-
-      const firstImages = await firstImagesQuery.getRawMany();
-      mainImages = [...mainImages, ...firstImages];
-    }
-
-    // Crear un mapa de imágenes por product_id (usar Map para obtener solo una imagen por producto)
-    // path_file ahora contiene la ruta completa (carpeta/id.extensión), construir URL del endpoint /files/{id}
-    const imagesMap = new Map<string, string | null>();
-    mainImages.forEach((img: any) => {
-      const productId = img.parent_id;
-      if (!imagesMap.has(productId)) {
-        // path_file contiene la ruta completa (ej: "products/uuid.jpg")
-        // Extraer el ID del archivo para construir la URL del endpoint
-        if (img.path_file) {
-          const pathParts = img.path_file.split('/');
-          const fileNameWithExt = pathParts[pathParts.length - 1];
-          const fileId = fileNameWithExt.split('.')[0];
-          imagesMap.set(productId, `uploads/${img.path_file}`);
-        } else {
-          imagesMap.set(productId, null);
-        }
-      }
-    });
-
-    // Obtener todas las categorías de los productos en una sola consulta
-    const categoriesQuery = this.productCategoriesRepository.createQueryBuilder('pc')
-      .innerJoin('categories', 'category', 'category.id = pc.category_id')
-      .where('pc.product_id IN (:...productIds)', { productIds })
-      .select('pc.product_id', 'product_id')
-      .addSelect('category.name', 'category_name')
-      .orderBy('pc.product_id', 'ASC')
-      .addOrderBy('category.name', 'ASC');
-
-    const productCategories = await categoriesQuery.getRawMany();
-
-    // Crear un mapa de categorías por product_id
-    const categoriesMap = new Map<string, string[]>();
-    productCategories.forEach((pc: any) => {
-      const productId = pc.product_id;
-      const categoryName = pc.category_name;
-      
-      if (!categoriesMap.has(productId)) {
-        categoriesMap.set(productId, []);
-      }
-      categoriesMap.get(productId)!.push(categoryName);
-    });
-
-    // Formatear la respuesta
-    const formattedProducts = products.map(product => ({
-      id: product.id,
-      seller_id: product.seller_id,
-      seller_name: product.seller.shop_name,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      stock: product.stock,
-      status: product.status,
-      created_at: product.created_at,
-      modified_at: product.modified_at,
-      image_path: imagesMap.get(product.id) || null,
-      categories: categoriesMap.get(product.id) || [],
-    }));
-
     return {
-      products: formattedProducts,
+      products: productWithCategories,
       meta: {
         total: total,
         page,
@@ -233,6 +187,19 @@ export class ProductsService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async getProductToAddCart(id: string): Promise<ProductsEntity> {
+    const product = await this.getByIdAndActive(id);
+    if (!product) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+
+    if (product.stock === 0) {
+      throw new BadRequestException('El producto no tiene stock');
+    }
+
+    return product;
   }
 } 
 

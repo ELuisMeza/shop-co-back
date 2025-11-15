@@ -104,34 +104,6 @@ export class FilesController {
     });
   }
 
-  @Get('parent/:parentId/:parentType')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Obtener archivos por parent_id y parent_type' })
-  @ApiParam({ name: 'parentId', description: 'ID del parent' })
-  @ApiParam({ name: 'parentType', description: 'Tipo del parent' })
-  @ApiOkResponse({ description: 'Retorna un array de archivos' })
-  async getFilesByParent(
-    @Param('parentId') parentId: string,
-    @Param('parentType') parentType: string,
-  ) {
-    return this.filesService.getByParentIdAndActive(parentId, parentType);
-  }
-
-  @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Obtener archivo por ID' })
-  @ApiParam({ name: 'id', description: 'ID del archivo' })
-  @ApiOkResponse({ description: 'Retorna el archivo' })
-  @Header('Content-Type', 'image/jpeg')
-  async getFileById(
-    @Param('id') id: string,
-    @Res() res: Response,
-  ) {
-    const file = await this.filesService.getById(id);
-    const fileBuffer = await this.filesService.getFileBuffer(id);
-    res.setHeader('Content-Type', file.mimetype || 'image/jpeg');
-    res.send(fileBuffer);
-  }
 
   @Put(':id/deactivate')
   @HttpCode(HttpStatus.OK)

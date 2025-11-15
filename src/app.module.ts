@@ -11,6 +11,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FilesModule } from './modules/files/files.module';
 import { ProductCategoriesModule } from './modules/product-categories/product-categories.module';
 import { typeOrmConfig } from './config/database.config';
+import { CartItemsModule } from './modules/cart_items/cart_items.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { typeOrmConfig } from './config/database.config';
     ProductsModule,
     ProductCategoriesModule,
     FilesModule,
+    CartItemsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

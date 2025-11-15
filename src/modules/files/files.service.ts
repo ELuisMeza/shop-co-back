@@ -27,26 +27,6 @@ export class FilesService {
   }
 
   /**
-   * Obtiene el buffer del archivo desde el sistema de archivos
-   * @param id ID del archivo
-   * @returns Buffer del archivo
-   */
-  async getFileBuffer(id: string): Promise<Buffer> {
-    const file = await this.getById(id);
-    if (!file.path_file) {
-      throw new NotFoundException('Ruta del archivo no encontrada');
-    }
-    // path_file ahora contiene la ruta completa (carpeta/id.extensión)
-    // Extraer carpeta, ID y extensión de la ruta
-    const pathParts = file.path_file.split('/');
-    const folderName = pathParts[0];
-    const fileNameWithExt = pathParts[1];
-    const fileId = fileNameWithExt.split('.')[0];
-    
-    return this.storageService.getFile(fileId, file.mimetype, folderName);
-  }
-
-  /**
    * Convierte el parent_type en un nombre de carpeta
    * @param parentType Tipo de parent (product, seller, etc.)
    * @returns Nombre de la carpeta (products, sellers, etc.)
@@ -82,11 +62,10 @@ export class FilesService {
     return extensionMap[mimetype] || '.jpg';
   }
 
-  async getByParentIdAndActive(parentId: string, parentType: string): Promise<FilesEntity[]> {
+  async getByParentIdAndActive(parentId: string): Promise<FilesEntity[]> {
     return this.filesRepository.find({
       where: { 
         parent_id: parentId,
-        parent_type: parentType,
         status: GlobalStatus.ACTIVE
       },
       order: { is_main: 'DESC', created_at: 'ASC' }
