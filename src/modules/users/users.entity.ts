@@ -2,6 +2,7 @@ import { GlobalStatus } from "src/globals/enums/global-status.enum";
 import { Column, PrimaryGeneratedColumn, Entity, BeforeInsert, JoinColumn, ManyToOne } from "typeorm";
 import { RolesEntity } from "../roles/roles.entity";
 import { SellersEntity } from "../sellers/sellers.entity";
+import { Exclude } from "class-transformer";
 
 @Entity({ name: 'users' })
 export class UsersEntity {
@@ -29,6 +30,7 @@ export class UsersEntity {
   @Column({ type: 'varchar', length: 150, unique: true, nullable: false })
   email: string;
 
+  @Exclude()
   @Column({ type: 'varchar', length: 255, nullable: false })
   password: string;
 

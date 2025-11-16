@@ -2,17 +2,15 @@ import { BadRequestException, Injectable, NotFoundException, Inject, forwardRef 
 import { ProductsEntity } from './products.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateProductDto } from './dto/create-product.dto';
 import { GlobalStatus } from 'src/globals/enums/global-status.enum';
-import { UpdateProductDto } from './dto/update-product.dto';
+import { CreateOrUpdateProductDto } from './dto/update-product.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { SellersService } from '../sellers/sellers.service';
 import { SearchProductsDto } from './dto/search-products.dto';
 import { FilesEntity } from '../files/files.entity';
-import { ProductCategoriesEntity } from '../product-categories/product-categories.entity';
-import { CategoriesEntity } from '../categories/categories.entity';
 import { FilesService } from '../files/files.service';
 import { ProductCategoriesService } from '../product-categories/product-categories.service';
+import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
 
 @Injectable()
 export class ProductsService {
@@ -28,13 +26,44 @@ export class ProductsService {
     private readonly filesService: FilesService,
   ) {}
 
-  async createProduct(createProductDto: CreateProductDto): Promise<ProductsEntity> {
-    await this.sellersService.userIsSeller(createProductDto.seller_id);
+  async createProduct(data: {
+    seller_id: string;
+    categories: string[];
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    images: Array<{ file: Express.Multer.File; is_main: boolean }>;
+  }): Promise<ProductsEntity> {
+    await this.sellersService.getById(data.seller_id);
 
-    await this.categoriesService.getByIdAndActive(createProductDto.category_id);
+    for (const categoryId of data.categories) {
+      await this.categoriesService.getByIdAndActive(categoryId);
+    }
 
-    const product = this.productsRepository.create(createProductDto);
-    return this.productsRepository.save(product);
+    const product = this.productsRepository.create({
+      seller_id: data.seller_id,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      stock: data.stock,
+    });
+
+    const savedProduct = await this.productsRepository.save(product);
+
+    if (data.categories && data.categories.length > 0) {
+      await this.productCategoriesService.createProductCategories(savedProduct.id, data.categories);
+    }
+
+    if (data.images && data.images.length > 0) {
+      await this.filesService.uploadFiles({
+        parent_id: savedProduct.id,
+        parent_type: GlobalTypesFiles.PRODUCT,
+        files: data.images,
+      });
+    }
+
+    return this.getById(savedProduct.id);
   }
 
   async getByIdAndActive(id: string): Promise<ProductsEntity> {
@@ -57,21 +86,58 @@ export class ProductsService {
       throw new NotFoundException('Producto no encontrado');
     }
 
+    const categories = await this.productCategoriesService.getCategoriesByProductId(product.id);
     const images = await this.filesService.getByParentIdAndActive(product.id);
-    return {...product, images};
+    return {...product, categories, images};
   }
-
-  async updateProduct(id: string, updateProductDto: UpdateProductDto): Promise<ProductsEntity> {
+  async updateProduct(
+    id: string, 
+    updateProductDto: CreateOrUpdateProductDto,
+    imagesData: Array<{ file: Express.Multer.File; is_main: boolean }>,
+    imageMainId: string | null,
+    deleteImages: string[],
+  ): Promise<ProductsEntity> {
+  
     await this.getById(id);
     try {
-      await this.productsRepository.update(id, updateProductDto);
+    
+      const payload = {
+        name: updateProductDto.name,
+        description: updateProductDto.description,
+        price: updateProductDto.price,
+        stock: updateProductDto.stock,
+      }
+      await this.productsRepository.update(id, payload);
+
+      if (deleteImages.length > 0) {
+        if(typeof deleteImages === 'string') {
+          deleteImages = JSON.parse(deleteImages);
+        }
+        await this.filesService.deleteFiles(deleteImages);
+      }
+  
+      if (imagesData && imagesData.length > 0) {
+        await this.filesService.uploadFiles({
+          parent_id: id,
+          parent_type: GlobalTypesFiles.PRODUCT,
+          files: imagesData,
+        });
+      }
+
+      if (imageMainId) {
+        await this.filesService.updateFileIsMain(imageMainId, id);
+      }
+  
+      await this.productCategoriesService.manageProductCategories(id, updateProductDto.categories);
       return this.getById(id);
+  
     } catch (error) {
-      throw new BadRequestException('Error al actualizar el producto');
+      throw new BadRequestException("Error updating product");
     }
   }
+  
 
-  async searchProducts(searchDto: SearchProductsDto) {
+  async searchProducts(searchDto: SearchProductsDto, sellerId?: string) {
     const { page = 1, limit = 10, search, category_ids, min_price, max_price } = searchDto;
     const skip = (page - 1) * limit;
 
@@ -79,7 +145,6 @@ export class ProductsService {
       throw new BadRequestException('El precio mínimo no puede ser mayor al precio máximo');
     }
 
-    // Query builder base para filtros (sin JOINs que puedan duplicar)
     const baseQueryBuilder = this.productsRepository.createQueryBuilder('product')
       .where('product.status = :status', { status: GlobalStatus.ACTIVE });
 
@@ -102,15 +167,16 @@ export class ProductsService {
       );
     }
 
-    // Obtener el total antes de aplicar paginación
+    if (sellerId) {
+      baseQueryBuilder.andWhere('product.seller_id = :sellerId', { sellerId });
+    }
+
     const total = await baseQueryBuilder.getCount();
 
-    // Primero obtener los IDs únicos de productos con paginación
     const idsQueryBuilder = this.productsRepository.createQueryBuilder('product')
       .select('product.id as id')
       .where('product.status = :status', { status: GlobalStatus.ACTIVE });
 
-    // Aplicar los mismos filtros
     if (search) {
       idsQueryBuilder.andWhere('product.name ILIKE :search', { search: `%${search}%` });
     }
@@ -130,7 +196,10 @@ export class ProductsService {
       );
     }
 
-    // Aplicar paginación solo a los IDs
+    if (sellerId) {
+      idsQueryBuilder.andWhere('product.seller_id = :sellerId', { sellerId });
+    }
+
     idsQueryBuilder.skip(skip).take(limit);
 
     const productIds = await idsQueryBuilder.getRawMany();
@@ -167,10 +236,8 @@ export class ProductsService {
       .where('product.id IN (:...ids)', { ids })
       .orderBy('product.id', 'ASC');
 
-    // Obtener los productos con getRawMany() ya que estamos usando select personalizado
     const products = await queryBuilder.getRawMany();
 
-    // Obtener las categorías para cada producto
     const productWithCategories = await Promise.all(
       products.map(async (product) => {
         const categories = await this.productCategoriesService.getCategoriesByProductId(product.id);

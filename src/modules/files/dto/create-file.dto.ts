@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsUUID, IsString, IsNotEmpty } from "class-validator";
+import { IsUUID, IsString, IsNotEmpty, IsEnum } from "class-validator";
+import { GlobalTypesFiles } from "src/globals/enums/global-types-files";
 
 
 export class CreateFileDto {
@@ -16,13 +17,11 @@ export class CreateFileDto {
 
   @ApiProperty({ 
     type: 'string',
-    description: 'Tipo de parent (product, user, seller, etc.)',
+    description: 'Tipo de parent (product, seller)',
     required: true,
-    example: 'product'
+    example: GlobalTypesFiles.PRODUCT
   })
-  @IsString()
-  @IsNotEmpty()
-  parent_type: string;
-
+  @IsEnum(GlobalTypesFiles, { message: 'El tipo de parent debe ser product o seller' })
+  @IsNotEmpty({ message: 'El tipo de parent es requerido' })
+  parent_type: GlobalTypesFiles;
 }
-

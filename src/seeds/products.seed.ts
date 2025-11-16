@@ -12,6 +12,7 @@ import { ProductCategoriesEntity } from '../modules/product-categories/product-c
 import { UsersEntity } from '../modules/users/users.entity';
 import { RolesEntity } from '../modules/roles/roles.entity';
 import { GlobalStatus } from '../globals/enums/global-status.enum';
+import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -499,7 +500,7 @@ async function seedProducts() {
              mimetype: 'image/jpeg',
              path_file: mainImagePath, // Guardamos la ruta completa: carpeta/id.extensión
              parent_id: savedProduct.id,
-             parent_type: 'product',
+             parent_type: GlobalTypesFiles.PRODUCT,
              is_main: true,
              status: GlobalStatus.ACTIVE,
            });
@@ -540,7 +541,7 @@ async function seedProducts() {
                  mimetype: 'image/jpeg',
                  path_file: additionalImagePath, // Guardamos la ruta completa: carpeta/id.extensión
                  parent_id: savedProduct.id,
-                 parent_type: 'product',
+                 parent_type: GlobalTypesFiles.PRODUCT,
                  is_main: false,
                  status: GlobalStatus.ACTIVE,
                });

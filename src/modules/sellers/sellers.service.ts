@@ -6,6 +6,7 @@ import { UpdateSellerDto } from './dto/update-seller.dto';
 import { CreateSellerDto } from '../auth/dto/create-user.dto';
 import { FilesService } from '../files/files.service';
 import { UploadFilesData } from '../files/dto/files.dto';
+import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
 
 @Injectable()
 export class SellersService {
@@ -33,7 +34,7 @@ export class SellersService {
 
       const payload: UploadFilesData = {
         parent_id: savedSeller.id,
-        parent_type: 'seller',
+        parent_type: GlobalTypesFiles.SELLER,
         files: [{
           file: logoFile,
           is_main: false,
@@ -48,6 +49,14 @@ export class SellersService {
 
   async getById(id: string): Promise<SellersEntity> {
     const seller = await this.sellersRepository.findOne({ where: { id }, relations: ['user'] });
+    if (!seller) {
+      throw new NotFoundException('Vendedor no encontrado');
+    }
+    return seller;
+  }
+
+  async getByUserId(userId: string): Promise<SellersEntity> {
+    const seller = await this.sellersRepository.findOne({ where: { user_id: userId } });
     if (!seller) {
       throw new NotFoundException('Vendedor no encontrado');
     }

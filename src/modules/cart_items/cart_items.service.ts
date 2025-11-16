@@ -62,7 +62,7 @@ export class CartItemsService {
 
   }
 
-  async getCartItems(user_id: string): Promise<any[]> {
+  async getCartItems(user_id: string) {
     return this.cartItemsRepository
       .createQueryBuilder('cart_items')
       .leftJoin('products', 'p', 'p.id = cart_items.product_id')

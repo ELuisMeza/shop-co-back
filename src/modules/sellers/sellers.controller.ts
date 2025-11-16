@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpStatus, HttpCode, Param, Post, Put, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, HttpCode, Param, Post, Put, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SellersService } from './sellers.service';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiParam, ApiConsumes } from '@nestjs/swagger';
@@ -7,7 +7,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-type MulterFile = Express.Multer.File;
+import type { RequestWithUser } from '../auth/dto/request-with-user.interface';
 
 @ApiTags('Vendedores')
 @Controller('sellers')
@@ -16,18 +16,18 @@ type MulterFile = Express.Multer.File;
 export class SellersController {
   constructor(private readonly sellersService: SellersService) {}
 
-  @Get(':id')
+  @Get('my-profile')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Obtener vendedor por ID' })
-  @ApiParam({ name: 'id', description: 'ID del vendedor' })
-  @ApiOkResponse({ description: 'Retorna el vendedor encontrado' })
-  async getSellerById(@Param('id') id: string) {
-    return this.sellersService.getById(id);
+  @ApiOperation({ summary: 'Obtener mi perfil de vendedor' })
+  @ApiOkResponse({ description: 'Retorna mi perfil' })
+  async getMyProfile(@Req() req: RequestWithUser) {
+    const id = req.user.userId;
+    return this.sellersService.getByUserId(id);
   }
 
-  @Put(':id')
+  @Put('my-profile')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Actualizar vendedor por ID' })
+  @ApiOperation({ summary: 'Actualizar mi perfil de vendedor' })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
   @ApiBody({ type: UpdateSellerDto })
   @ApiOkResponse({ description: 'Retorna el vendedor actualizado' })

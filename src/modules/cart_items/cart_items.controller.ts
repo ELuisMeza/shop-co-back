@@ -26,9 +26,10 @@ export class CartItemsController {
   }
   
   @Put('/:product_id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Eliminar producto del carrito' })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Actualizar cantidad de producto en el carrito' })
   @ApiParam({ name: 'product_id', description: 'ID del producto a eliminar' })
+  @ApiOkResponse({ description: 'Retorna el mensaje de éxito' })
   async updateProductQuantity(@Param('product_id') product_id: string, @Req() req: RequestWithUser, @Body() updateProductQuantityDto: { quantity: number }) {
     return this.cartItemsService.updateProductQuantity(product_id, req.user.userId, updateProductQuantityDto.quantity);
   }
@@ -44,7 +45,7 @@ export class CartItemsController {
   }
   
   @Delete('clear-cart')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Eliminar todos los productos del carrito' })
   @ApiOkResponse({ description: 'Retorna el mensaje de éxito' })
   async clearCart(@Req() req: RequestWithUser) {
@@ -52,7 +53,7 @@ export class CartItemsController {
   }
   
   @Delete('/:product_id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Eliminar producto del carrito' })
   @ApiParam({ name: 'product_id', description: 'ID del producto a eliminar' })
   async removeProduct(@Param('product_id') product_id: string, @Req() req: RequestWithUser) {

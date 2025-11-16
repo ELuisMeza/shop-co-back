@@ -54,7 +54,7 @@ export class FilesController {
     @UploadedFiles() files: MulterFile[],
     @Body() createDto: CreateFileDto,
     @Req() req: Request,
-  ): Promise<any> {
+  ){
     if (!files || files.length === 0) {
       throw new BadRequestException('No se proporcionaron archivos');
     }

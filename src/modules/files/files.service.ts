@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { FilesEntity } from './files.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { UpdateFileDto } from './dto/update-file.dto';
 import { GlobalStatus } from 'src/globals/enums/global-status.enum';
 import { UploadFilesData } from './dto/files.dto';
 import { StorageService } from '../../storage/storage.service';
 import { randomUUID } from 'crypto';
+import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
 
 @Injectable()
 export class FilesService {
@@ -35,14 +36,10 @@ export class FilesService {
     // Mapeo de parent_type a nombre de carpeta
     // Puedes agregar más mapeos aquí según necesites
     const folderMap: { [key: string]: string } = {
-      'product': 'products',
-      'seller': 'sellers',
-      'user': 'users',
-      // Agregar más mapeos según sea necesario
+      [GlobalTypesFiles.PRODUCT]: GlobalTypesFiles.PRODUCT,
+      [GlobalTypesFiles.SELLER]: GlobalTypesFiles.SELLER,
     };
-
-    // Si existe un mapeo, usarlo; si no, usar el parentType como carpeta (pluralizado)
-    return folderMap[parentType] || `${parentType}s`;
+    return folderMap[parentType] || parentType;
   }
 
   /**
@@ -86,6 +83,28 @@ export class FilesService {
   }
 
   /**
+   * Actualiza el estado is_main de un archivo existente
+   * Si se marca como principal, desmarca otros archivos principales del mismo parent
+   */
+  async updateFileIsMain(id: string, parentId: string): Promise<FilesEntity> {
+    await this.getById(id);
+    
+
+      await this.filesRepository
+        .createQueryBuilder()
+        .update(FilesEntity)
+        .set({ is_main: false })
+        .where('parent_id = :parentId', { parentId })
+        .andWhere('id != :id', { id })
+        .execute();
+    
+    
+    await this.filesRepository.update(id, { is_main: true });
+    return this.getById(id);
+  }
+
+
+  /**
    * Guarda uno o múltiples archivos con parent_id y parent_type
    * @param data Objeto con parent_id, parent_type y array de archivos
    * @returns Array con los archivos guardados
@@ -96,16 +115,6 @@ export class FilesService {
     }
 
     const { parent_id, parent_type, files } = data;
-
-    // Verificar si hay algún archivo marcado como principal
-    const hasMainFile = files.some(fileData => fileData.is_main === true);
-    if (hasMainFile) {
-      // Desmarcar otros archivos principales del mismo parent
-      await this.filesRepository.update(
-        { parent_id, parent_type, is_main: true },
-        { is_main: false }
-      );
-    }
 
     const savedFiles: FilesEntity[] = [];
 
@@ -142,12 +151,53 @@ export class FilesService {
         is_main: is_main || false,
         status: GlobalStatus.ACTIVE,
       });
-
+      
       const savedFile = await this.filesRepository.save(fileEntity);
       savedFiles.push(savedFile);
+
+      // Si el archivo es principal, actualizar el archivo principal y desmarcar los otros archivos principales
+      if(is_main) {
+        await this.updateFileIsMain(savedFile.id, parent_id);
+      }
+
     }
 
     return savedFiles;
+  }
+
+  async deleteFiles(ids: string[]): Promise<void> {
+    if (!ids || ids.length === 0) {
+      return;
+    }
+
+    // Obtener los archivos antes de eliminarlos para tener sus rutas y mimetypes
+    const files = await this.filesRepository.find({
+      where: { id: In(ids) },
+    });
+
+    // Eliminar archivos físicos y registros de la base de datos
+    for (const file of files) {
+      try {
+        // Extraer folderName y fileId del path_file
+        // path_file tiene formato: "folderName/fileId.extension" (ej: "products/uuid.jpg")
+        const pathParts = file.path_file.split('/');
+        if (pathParts.length === 2) {
+          const folderName = pathParts[0];
+          const fileNameWithExt = pathParts[1];
+          // Extraer el fileId (sin extensión)
+          const fileId = fileNameWithExt.substring(0, fileNameWithExt.lastIndexOf('.'));
+
+          // Eliminar archivo físico
+          await this.storageService.deleteFile(fileId, file.mimetype, folderName);
+        }
+      } catch (error) {
+        // Si falla la eliminación del archivo físico, continuar con la eliminación de la BD
+        console.error(`Error al eliminar archivo físico ${file.id}:`, error); 
+      }
+
+      // Eliminar registro de la base de datos
+      await this.filesRepository.delete(file.id);
+    }
   }
 }
 

@@ -23,7 +23,7 @@ export class UsersService {
   ) {}
 
 
-  async createUser(createUserDto: CreateUserDto): Promise<any> {
+  async createUser(createUserDto: CreateUserDto) {
     const user = await this.getByEmail(createUserDto.email);
     if (user) {
       throw new ConflictException('El email ya está registrado');
@@ -52,7 +52,7 @@ export class UsersService {
     return this.authService.generateTokenResponse(userWithRelations!);
   }
 
-  async createSeller(createSellerDto: CreateSellerDto, logoFile?: MulterFile): Promise<any> {
+  async createSeller(createSellerDto: CreateSellerDto, logoFile?: MulterFile) {
     const user = await this.getByEmail(createSellerDto.email);
     if (user) {
       throw new ConflictException('El email ya está registrado');
@@ -93,7 +93,7 @@ export class UsersService {
   }
 
   async getById(id: string): Promise<UsersEntity> {
-    const user = await this.usersRepository.findOne({ where: { id } });
+    const user = await this.usersRepository.findOne({ where: { id }, relations: ['role'] });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }

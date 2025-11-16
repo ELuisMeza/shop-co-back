@@ -23,14 +23,4 @@ export class UpdateUserDto {
   @IsNotEmpty()
   phone: string;
 
-  @ApiProperty({ example: '9999999999', description: 'Número de documento del usuario' })
-  @IsString()
-  @IsNotEmpty()
-  num_document: string;
-
-  @ApiProperty({ example: 'DNI', description: 'Tipo de documento del usuario' })
-  @IsString()
-  @IsNotEmpty()
-  type_document: string;
-
 } 

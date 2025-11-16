@@ -47,6 +47,10 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true, 
     transform: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+      exposeDefaultValues: true,
+    },
   }));
 
   // Interceptor global para excluir campos marcados con @Exclude()
