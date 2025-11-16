@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseInterceptors, Upl
 import { AuthService } from './auth.service';
 import { ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
-import { CreateSellerDto, CreateUserDto } from './dto/create-user.dto';
+import { CreateUserSellerDto, CreateUserDto } from './dto/create-user.dto';
 import { UsersService } from '../users/users.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileUploadInterceptor } from '../../interceptors/file-upload.interceptor';
@@ -42,10 +42,10 @@ export class AuthController {
   @UseInterceptors(FileInterceptor('logo_image'), FileUploadInterceptor)
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Crear vendedor' })
-  @ApiBody({ type: CreateSellerDto })
+  @ApiBody({ type: CreateUserSellerDto })
   @ApiOkResponse({ description: 'Retorna el vendedor creado' })
   async createSeller(
-    @Body() createSellerDto: CreateSellerDto,
+    @Body() createSellerDto: CreateUserSellerDto,
     @UploadedFile() logoFile?: MulterFile,
   ) {
     return this.usersService.createSeller(createSellerDto, logoFile);

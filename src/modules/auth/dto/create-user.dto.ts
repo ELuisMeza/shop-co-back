@@ -3,6 +3,7 @@ import { UpdateUserDto } from "../../users/dto/update-user.dto";
 import { IsEmail, IsString, IsUUID } from "class-validator";
 import { IsNotEmpty } from "class-validator";
 import { UpdateSellerDto } from "src/modules/sellers/dto/update-seller.dto";
+import { CreateSellerDto } from "src/modules/sellers/dto/create-seller.dto";
 
 export class CreateUserDto extends UpdateUserDto {
   @ApiProperty({ example: 'juan.perez@example.com', description: 'Email del usuario' })
@@ -26,7 +27,7 @@ export class CreateUserDto extends UpdateUserDto {
   type_document: string;
 }
 
-export class CreateSellerDto extends IntersectionType(
+export class CreateUserSellerDto extends IntersectionType(
   CreateUserDto,
-  UpdateSellerDto,
+  CreateSellerDto,
 ) {}

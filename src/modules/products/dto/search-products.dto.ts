@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsString, IsInt, Min, IsArray, IsUUID, IsNumber } from "class-validator";
+import { IsOptional, IsString, IsInt, Min, IsArray, IsUUID, IsNumber, IsBoolean, IsEnum } from "class-validator";
 import { Type } from "class-transformer";
+import { GlobalStatus } from "src/globals/enums/global-status.enum";
 
 export class SearchProductsDto {
   @ApiProperty({ 
@@ -70,5 +71,15 @@ export class SearchProductsDto {
   @IsNumber()
   @Min(0)
   max_price?: number;
+
+  @ApiProperty({
+    example: GlobalStatus.ACTIVE,
+    description: 'Filtrar por status, solo se puede usar si se tiene sellerId',
+    required: false,
+    enum: GlobalStatus,
+  })
+  @IsOptional()
+  @IsEnum(GlobalStatus, { message: 'El status debe ser un valor válido' })
+  status?: GlobalStatus;
 }
 

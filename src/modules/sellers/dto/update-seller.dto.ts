@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
 
 export class UpdateSellerDto {
   @ApiProperty({ example: 'Mi Tienda Online', description: 'Nombre de la tienda' })
@@ -12,14 +12,13 @@ export class UpdateSellerDto {
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ example: '20123456789', description: 'RUC de la empresa' })
-  @IsString()
-  @IsOptional()
-  ruc?: string;
-
   @ApiProperty({ example: 'Av. Principal 123', description: 'Dirección del negocio' })
   @IsString()
   @IsOptional()
   business_address?: string;
+
+  @ApiProperty({ type: 'string', format: 'binary', description: 'Logo de la tienda' })
+  @IsOptional()
+  logo_image?: Express.Multer.File;
 }
 

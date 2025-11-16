@@ -8,6 +8,8 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { RequestWithUser } from '../auth/dto/request-with-user.interface';
+import { FileUploadInterceptor } from 'src/interceptors/file-upload.interceptor';
+type MulterFile = Express.Multer.File;
 
 @ApiTags('Vendedores')
 @Controller('sellers')
@@ -28,14 +30,17 @@ export class SellersController {
   @Put('my-profile')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Actualizar mi perfil de vendedor' })
-  @ApiParam({ name: 'id', description: 'ID del vendedor' })
+  @UseInterceptors(FileInterceptor('logo_image'), FileUploadInterceptor)
+  @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateSellerDto })
   @ApiOkResponse({ description: 'Retorna el vendedor actualizado' })
   async updateSellerById(
-    @Param('id') id: string,
+    @Req() req: RequestWithUser,
     @Body() updateSellerDto: UpdateSellerDto,
+    @UploadedFile() logoFile?: MulterFile,
   ) {
-    return this.sellersService.updateSeller(id, updateSellerDto);
+    const seller = await this.sellersService.userIsSeller(req.user.userId);
+    return this.sellersService.updateSeller(seller.id, updateSellerDto, logoFile);
   }
 }
 

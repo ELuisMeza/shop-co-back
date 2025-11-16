@@ -42,11 +42,6 @@ export class CreateOrUpdateProductDto {
   @Min(0, { message: 'El stock debe ser mayor o igual a 0' })
   stock: number;
 
-  @ApiProperty({ example: GlobalStatus.ACTIVE, description: 'Estado del producto' })
-  @IsEnum(GlobalStatus)
-  @IsOptional()
-  status?: GlobalStatus;
-
   @ApiProperty({
     type: 'string',
     description: 'Metadata de las imágenes en formato JSON string. Para nuevas imágenes: [{ "file_id": "uuid", "is_main": boolean }]. Ejemplo: \'[{"file_id":"file-id","is_main":true}]\'',

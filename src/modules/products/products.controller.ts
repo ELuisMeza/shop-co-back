@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpStatus, HttpCode, Param, Post, Put, UseGuards, NotFoundException, Req, UseInterceptors, UploadedFiles, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, HttpCode, Param, Post, Put, UseGuards, NotFoundException, Req, UseInterceptors, UploadedFiles, BadRequestException, Patch } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiParam, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { ApiTags } from '@nestjs/swagger';
@@ -57,6 +57,16 @@ export class ProductsController {
     const id = req.user.userId;
     const seller = await this.sellersService.getByUserId(id);
     return this.productsService.searchProducts(searchDto, seller.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Patch(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Actvar o desactivar producto por ID' })
+  @ApiOkResponse({ description: 'Retorna el producto actualizado' })
+  async updateProductStatusById(@Param('id') id: string) {
+    return this.productsService.updateProductStatusById(id);
   }
 
   @Get(':id')

@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GlobalStatus } from 'src/globals/enums/global-status.enum';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CreateSellerDto, CreateUserDto } from '../auth/dto/create-user.dto';
+import { CreateUserSellerDto, CreateUserDto } from '../auth/dto/create-user.dto';
 import { SellersEntity } from '../sellers/sellers.entity';
 import { SellersService } from '../sellers/sellers.service';
 import { RolesService } from '../roles/roles.service';
@@ -52,7 +52,7 @@ export class UsersService {
     return this.authService.generateTokenResponse(userWithRelations!);
   }
 
-  async createSeller(createSellerDto: CreateSellerDto, logoFile?: MulterFile) {
+  async createSeller(createSellerDto: CreateUserSellerDto, logoFile?: MulterFile) {
     const user = await this.getByEmail(createSellerDto.email);
     if (user) {
       throw new ConflictException('El email ya está registrado');

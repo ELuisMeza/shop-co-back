@@ -90,6 +90,7 @@ export class ProductsService {
     const images = await this.filesService.getByParentIdAndActive(product.id);
     return {...product, categories, images};
   }
+  
   async updateProduct(
     id: string, 
     updateProductDto: CreateOrUpdateProductDto,
@@ -136,17 +137,31 @@ export class ProductsService {
     }
   }
   
-
   async searchProducts(searchDto: SearchProductsDto, sellerId?: string) {
-    const { page = 1, limit = 10, search, category_ids, min_price, max_price } = searchDto;
+    const { page = 1, limit = 10, search, category_ids, min_price, max_price, status } = searchDto;
     const skip = (page - 1) * limit;
 
     if (min_price !== undefined && max_price !== undefined && min_price > max_price) {
       throw new BadRequestException('El precio mínimo no puede ser mayor al precio máximo');
     }
 
+    if (status !== undefined && !sellerId) {
+      throw new BadRequestException('El filtro por status solo está disponible cuando se filtra por sellerId');
+    }
+
     const baseQueryBuilder = this.productsRepository.createQueryBuilder('product')
-      .where('product.status = :status', { status: GlobalStatus.ACTIVE });
+
+    // Aplicar filtro de status según corresponda
+    if (!sellerId) {
+      // Sin sellerId: siempre mostrar solo productos activos
+      baseQueryBuilder.where('product.status = :status', { status: GlobalStatus.ACTIVE });
+    } else if (status !== undefined) {
+      // Con sellerId y status especificado: filtrar por ese status
+      baseQueryBuilder.where('product.status = :status', { status });
+    } else {
+      // Con sellerId pero sin status: mostrar todos (activos e inactivos)
+      baseQueryBuilder.where('1=1'); 
+    }
 
     if (search) {
       baseQueryBuilder.andWhere('product.name ILIKE :search', { search: `%${search}%` });
@@ -174,8 +189,18 @@ export class ProductsService {
     const total = await baseQueryBuilder.getCount();
 
     const idsQueryBuilder = this.productsRepository.createQueryBuilder('product')
-      .select('product.id as id')
-      .where('product.status = :status', { status: GlobalStatus.ACTIVE });
+      .select('product.id as id');
+
+    // Aplicar filtro de status según corresponda
+    if (!sellerId) {
+      idsQueryBuilder.where('product.status = :status', { status: GlobalStatus.ACTIVE });
+    } else if (status !== undefined) {
+      // Si hay sellerId y se especifica status, filtrar por ese status
+      idsQueryBuilder.where('product.status = :status', { status });
+    } else {
+      // Si hay sellerId pero no se especifica status, no filtrar por status (mostrar todos)
+      idsQueryBuilder.where('1=1'); // Condición siempre verdadera para poder usar andWhere después
+    }
 
     if (search) {
       idsQueryBuilder.andWhere('product.name ILIKE :search', { search: `%${search}%` });
@@ -267,6 +292,15 @@ export class ProductsService {
     }
 
     return product;
+  }
+
+  async updateProductStatusById(id: string) {
+    const product = await this.getById(id);
+    if (!product) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+    await this.productsRepository.update(id, { status: GlobalStatus.ACTIVE === product.status ? GlobalStatus.INACTIVE : GlobalStatus.ACTIVE });
+    return await this.getById(id);
   }
 } 
 
