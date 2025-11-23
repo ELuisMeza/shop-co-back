@@ -1,5 +1,77 @@
 # Seeds para la Base de Datos
 
+## Seed Inicial
+
+Este seed crea los datos básicos necesarios para el funcionamiento de la aplicación en el siguiente orden:
+
+1. **Roles**: Crea los roles `buyer`, `seller` y `admin`
+2. **Usuarios**: Crea 1 usuario buyer y 2 usuarios sellers (con sus respectivos sellers)
+3. **Categorías**: Crea 9 categorías por defecto
+
+### Requisitos Previos
+
+1. Asegúrate de tener configuradas las variables de entorno en el archivo `.env`:
+   - `DB_HOST`
+   - `DB_PORT` (opcional, por defecto 5432)
+   - `DB_USERNAME`
+   - `DB_PASSWORD`
+   - `DB_NAME`
+   - `DB_SCHEMA` (opcional, por defecto 'public')
+
+2. **Las migraciones deben estar ejecutadas** antes de ejecutar este seed:
+   ```bash
+   npm run migration:run
+   ```
+
+### Ejecución
+
+Para ejecutar el seed inicial, usa el siguiente comando:
+
+```bash
+npm run seed:initial
+```
+
+### Datos Creados
+
+**Roles:**
+- `buyer` - Rol para compradores
+- `seller` - Rol para vendedores
+- `admin` - Rol para administradores
+
+**Usuarios:**
+- **Buyer:** 
+  - Email: `buyer@example.com`
+  - Password: `password123`
+
+- **Seller 1:**
+  - Email: `seller1@example.com`
+  - Password: `password123`
+  - Tienda: "Tienda Fashion"
+
+- **Seller 2:**
+  - Email: `seller2@example.com`
+  - Password: `password123`
+  - Tienda: "Moda Elegante"
+
+**Categorías:**
+- Ropa Hombre
+- Ropa Mujer
+- Calzado
+- Accesorios
+- Ropa Deportiva
+- Ropa Interior
+- Ropa Formal
+- Ropa de Baño
+- Unisex
+
+### Notas
+
+- El seed es idempotente: si los datos ya existen, los omite y no los duplica
+- Es seguro ejecutarlo múltiples veces
+- Se recomienda ejecutar este seed antes de ejecutar el seed de productos
+
+---
+
 ## Seed de Productos
 
 Este seed genera al menos 100 productos con imágenes en la base de datos.

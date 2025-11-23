@@ -1,98 +1,376 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+## Descripción
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend de **Shop Co**, una aplicación de comercio electrónico desarrollada con [NestJS](https://nestjs.com/) y TypeScript. Este proyecto proporciona una API RESTful completa para gestionar usuarios, productos, categorías, vendedores, carritos de compra, órdenes y pagos a través de PayPal.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Características
 
-## Description
+- 🔐 Autenticación JWT
+- 👥 Gestión de usuarios con roles (buyer, seller, admin)
+- 🏪 Gestión de vendedores y tiendas
+- 📦 Gestión de productos y categorías
+- 🛒 Carrito de compras
+- 💳 Procesamiento de pagos con PayPal
+- 📄 Gestión de archivos e imágenes
+- 📊 Migraciones de base de datos con TypeORM
+- 🌱 Seeds para datos iniciales
+- 📚 Documentación Swagger/OpenAPI
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Requisitos Previos
 
-## Project setup
+- Node.js (v18 o superior)
+- PostgreSQL (v12 o superior)
+- npm o yarn
+
+## Configuración del Proyecto
+
+### 1. Instalación de Dependencias
 
 ```bash
-$ npm install
+npm install
 ```
 
-## Compile and run the project
+### 2. Variables de Entorno
+
+Copia el archivo `.env.example` y crea un archivo `.env` en la raíz del proyecto:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cp .env.example .env
 ```
 
-## Run tests
+Luego, configura las siguientes variables de entorno en el archivo `.env`:
+
+```env
+# JWT
+JWT_SECRET=tu_llave_secreta
+
+# Servidor
+PORT=3000
+
+# Base de Datos PostgreSQL
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=contraseña_bd
+DB_NAME=nombre_de_tu_bd
+DB_SCHEMA=public
+DB_LOGGING=false
+
+# PayPal
+PAYPAL_CLIENT_ID=cliente_paypal
+PAYPAL_CLIENT_SECRET=secreto_paypal
+PAYPAL_MODE=sandbox
+
+# Frontend
+FRONTEND_URL=la_ruta_de_tu_front
+```
+
+#### Descripción de Variables de Entorno
+
+| Variable | Descripción | Requerida | Valor por Defecto |
+|----------|-------------|-----------|-------------------|
+| `JWT_SECRET` | Clave secreta para firmar tokens JWT | ✅ | - |
+| `PORT` | Puerto en el que se ejecutará el servidor | ❌ | 3000 |
+| `DB_HOST` | Host de la base de datos PostgreSQL | ✅ | - |
+| `DB_PORT` | Puerto de la base de datos PostgreSQL | ❌ | 5432 |
+| `DB_USERNAME` | Usuario de la base de datos | ✅ | - |
+| `DB_PASSWORD` | Contraseña de la base de datos | ✅ | - |
+| `DB_NAME` | Nombre de la base de datos | ✅ | - |
+| `DB_SCHEMA` | Esquema de la base de datos | ❌ | public |
+| `DB_LOGGING` | Habilitar logging de consultas SQL | ❌ | false |
+| `PAYPAL_CLIENT_ID` | ID de cliente de PayPal | ✅ | - |
+| `PAYPAL_CLIENT_SECRET` | Secreto de cliente de PayPal | ✅ | - |
+| `PAYPAL_MODE` | Modo de PayPal (sandbox/live) | ❌ | sandbox |
+| `FRONTEND_URL` | URL del frontend para CORS y redirecciones | ❌ | http://localhost:3000 |
+
+### 3. Crear la Base de Datos
+
+Crea una base de datos PostgreSQL:
+
+```sql
+CREATE DATABASE nombre_de_tu_bd;
+```
+
+## Estructura del Proyecto
+
+```
+back/
+├── src/
+│   ├── config/              # Configuración de base de datos
+│   │   ├── database.config.ts
+│   │   └── typeorm-datasource.ts
+│   ├── globals/             # Enums y tipos globales
+│   │   └── enums/
+│   ├── interceptors/        # Interceptores
+│   │   └── file-upload.interceptor.ts
+│   ├── migrations/          # Migraciones de base de datos
+│   │   └── 1734968400000-CreateInitialSchema.ts
+│   ├── modules/             # Módulos de la aplicación
+│   │   ├── auth/           # Autenticación y autorización
+│   │   ├── users/          # Gestión de usuarios
+│   │   ├── roles/         # Roles de usuario
+│   │   ├── sellers/       # Vendedores y tiendas
+│   │   ├── products/      # Productos
+│   │   ├── categories/    # Categorías
+│   │   ├── product-categories/  # Relación productos-categorías
+│   │   ├── cart_items/    # Items del carrito
+│   │   ├── orders/        # Órdenes
+│   │   ├── order_items/   # Items de órdenes
+│   │   ├── files/         # Gestión de archivos
+│   │   └── paypal/        # Integración con PayPal
+│   ├── seeds/              # Seeds para datos iniciales
+│   │   ├── initial.seed.ts
+│   │   └── products.seed.ts
+│   ├── storage/           # Servicio de almacenamiento
+│   ├── app.module.ts      # Módulo principal
+│   └── main.ts            # Punto de entrada
+├── uploads/               # Archivos subidos (imágenes, etc.)
+├── test/                 # Tests e2e
+├── .env.example          # Ejemplo de variables de entorno
+├── package.json
+└── README.md
+```
+
+## Migraciones
+
+El proyecto utiliza TypeORM para gestionar las migraciones de base de datos. Las migraciones están deshabilitadas automáticamente (`synchronize: false`) para mayor control.
+
+### Ejecutar Migraciones
 
 ```bash
-# unit tests
-$ npm run test
+# Ejecutar todas las migraciones pendientes
+npm run migration:run
 
-# e2e tests
-$ npm run test:e2e
+# Revertir la última migración
+npm run migration:revert
 
-# test coverage
-$ npm run test:cov
+# Ver el estado de las migraciones
+npm run migration:show
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Crear una Nueva Migración
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Generar migración automáticamente basada en cambios en entidades
+npm run migration:generate src/migrations/NombreDeLaMigracion
+
+# Crear un archivo de migración vacío
+npm run migration:create src/migrations/NombreDeLaMigracion
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+**Nota:** Las migraciones se generan automáticamente basándose en los cambios detectados en las entidades. Asegúrate de revisar el código generado antes de ejecutarlo.
 
-## Resources
+## Seeds
 
-Check out a few resources that may come in handy when working with NestJS:
+Los seeds permiten poblar la base de datos con datos iniciales para desarrollo y testing.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Seed Inicial
 
-## Support
+Crea roles, usuarios de prueba, vendedores y categorías:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npm run seed:initial
+```
 
-## Stay in touch
+Este seed crea:
+- **Roles:** buyer, seller, admin
+- **Usuarios de prueba:**
+  - `buyer@example.com` (password: `password123`)
+  - `seller1@example.com` (password: `password123`)
+  - `seller2@example.com` (password: `password123`)
+- **Vendedores:** 2 tiendas de ejemplo
+- **Categorías:** 9 categorías predefinidas
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Seed de Productos
 
-## License
+Crea productos de ejemplo con imágenes (requiere que existan sellers):
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+npm run seed:products
+```
+
+Este seed crea:
+- Más de 100 productos de ejemplo
+- Imágenes asociadas a cada producto
+- Asignación automática de categorías basada en el nombre del producto
+
+**Importante:** Ejecuta primero `seed:initial` para crear los sellers necesarios.
+
+## Compilar y Ejecutar el Proyecto
+
+```bash
+# Modo desarrollo (con hot-reload)
+npm run start:dev
+
+# Modo desarrollo estándar
+npm run start
+
+# Modo producción
+npm run build
+npm run start:prod
+
+# Modo debug
+npm run start:debug
+```
+
+## Documentación de la API
+
+Una vez que el servidor esté ejecutándose, puedes acceder a la documentación Swagger en:
+
+```
+http://localhost:3000/api
+```
+
+La documentación incluye:
+- Todos los endpoints disponibles
+- Esquemas de request/response
+- Autenticación Bearer Token
+- Ejemplos de uso
+
+## Ejecutar Tests
+
+```bash
+# Tests unitarios
+npm run test
+
+# Tests en modo watch
+npm run test:watch
+
+# Tests e2e
+npm run test:e2e
+
+# Cobertura de código
+npm run test:cov
+
+# Debug de tests
+npm run test:debug
+```
+
+## Despliegue
+
+### Preparación para Producción
+
+1. **Configurar variables de entorno de producción:**
+   - Asegúrate de tener todas las variables de entorno configuradas
+   - Usa valores seguros para `JWT_SECRET`
+   - Configura `PAYPAL_MODE=live` para pagos reales
+   - Establece `DB_LOGGING=false` en producción
+
+2. **Compilar el proyecto:**
+   ```bash
+   npm run build
+   ```
+
+3. **Ejecutar migraciones:**
+   ```bash
+   npm run migration:run
+   ```
+
+4. **Ejecutar seeds (opcional):**
+   ```bash
+   npm run seed:initial
+   ```
+
+### Opciones de Despliegue
+
+#### Opción 1: Servidor VPS/Dedicado
+
+1. Instala Node.js y PostgreSQL en el servidor
+2. Clona el repositorio
+3. Configura las variables de entorno
+4. Ejecuta `npm install --production`
+5. Compila con `npm run build`
+6. Ejecuta migraciones
+7. Inicia con `npm run start:prod` o usa PM2:
+
+```bash
+npm install -g pm2
+pm2 start dist/main.js --name shop-co-back
+pm2 save
+pm2 startup
+```
+
+#### Opción 2: Docker
+
+Crea un `Dockerfile`:
+
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["node", "dist/main.js"]
+```
+
+Y un `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: nombre_de_tu_bd
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: contraseña_bd
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:
+```
+
+#### Opción 3: Plataformas Cloud
+
+- **Heroku:** Usa el buildpack de Node.js
+- **AWS (Mau):** Sigue la [documentación oficial de NestJS Mau](https://mau.nestjs.com)
+- **Railway/Render:** Configura el build command y start command
+
+### Checklist de Despliegue
+
+- [ ] Variables de entorno configuradas
+- [ ] Base de datos creada y accesible
+- [ ] Migraciones ejecutadas
+- [ ] Proyecto compilado (`npm run build`)
+- [ ] Tests pasando
+- [ ] CORS configurado correctamente
+- [ ] HTTPS habilitado (recomendado)
+- [ ] Logging configurado
+- [ ] Backup de base de datos configurado
+
+## Comandos Útiles
+
+```bash
+# Formatear código
+npm run format
+
+# Linter
+npm run lint
+
+# Ver estado de migraciones
+npm run migration:show
+
+# Revertir última migración
+npm run migration:revert
+```
+
+## Recursos
+
+- [Documentación de NestJS](https://docs.nestjs.com)
+- [Documentación de TypeORM](https://typeorm.io)
+- [Documentación de Swagger](https://swagger.io/docs)
+
+## Licencia
+
+Este proyecto es privado y no está licenciado para uso público.

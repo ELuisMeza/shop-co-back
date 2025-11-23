@@ -315,6 +315,18 @@ function getPlaceholderImageUrl(productName: string, width: number = 800, height
   return `https://via.placeholder.com/${width}x${height}/E5E5E5/666666?text=${text}`;
 }
 
+// Función para crear una imagen placeholder local como último recurso
+function createLocalPlaceholderImage(productName: string, width: number = 800, height: number = 600): Buffer {
+  // Crear una imagen SVG simple que se puede convertir a PNG/JPG
+  const text = productName.substring(0, 30).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${width}" height="${height}" fill="#E5E5E5"/>
+  <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="24" fill="#666666" text-anchor="middle" dominant-baseline="middle">${text}</text>
+</svg>`;
+  return Buffer.from(svg, 'utf-8');
+}
+
 async function seedProducts() {
   const dataSource = new DataSource({
     type: 'postgres',
@@ -466,46 +478,74 @@ async function seedProducts() {
           console.warn(`⚠️  Error al asociar categorías para producto ${savedProduct.id}: ${categoryError}`);
         }
 
-        // Descargar y guardar imagen principal
-         try {
-           let imageUrl = getProductImageUrl(productData.name, i);
-           console.log(`📥 Descargando imagen para: ${productData.name}...`);
-           
-           let imageBuffer: Buffer;
-           try {
-             imageBuffer = await downloadImage(imageUrl);
-           } catch (primaryError) {
-             // Si falla Picsum, usar placeholder como fallback
-             console.warn(`⚠️  Falló descarga principal, usando placeholder para: ${productData.name}`);
-             imageUrl = getPlaceholderImageUrl(productData.name);
-             imageBuffer = await downloadImage(imageUrl);
-           }
+        // Descargar y guardar imagen principal (GARANTIZADA)
+        // Asegurar que siempre se cree una imagen principal para cada producto
+        let mainImageBuffer: Buffer | null = null;
+        let imageExtension = '.jpg';
+        let imageMimetype = 'image/jpeg';
+        
+        try {
+          // Intentar descargar desde Picsum Photos
+          let imageUrl = getProductImageUrl(productData.name, i);
+          console.log(`📥 Descargando imagen para: ${productData.name}...`);
+          
+          try {
+            mainImageBuffer = await downloadImage(imageUrl);
+          } catch (primaryError) {
+            // Si falla Picsum, intentar con placeholder.com
+            console.warn(`⚠️  Falló descarga desde Picsum, intentando placeholder para: ${productData.name}`);
+            try {
+              imageUrl = getPlaceholderImageUrl(productData.name);
+              mainImageBuffer = await downloadImage(imageUrl);
+            } catch (placeholderError) {
+              // Si también falla placeholder, crear imagen local como último recurso
+              console.warn(`⚠️  Falló descarga de placeholder, creando imagen local para: ${productData.name}`);
+              mainImageBuffer = createLocalPlaceholderImage(productData.name);
+              imageExtension = '.svg';
+              imageMimetype = 'image/svg+xml';
+            }
+          }
+        } catch (imageError) {
+          // Como último recurso, crear imagen local placeholder
+          console.warn(`⚠️  Todos los intentos de descarga fallaron, creando imagen local para: ${productData.name}`);
+          mainImageBuffer = createLocalPlaceholderImage(productData.name);
+          imageExtension = '.svg';
+          imageMimetype = 'image/svg+xml';
+        }
 
-           // Generar ID único para el archivo
-           const mainImageId = randomUUID();
-           
-           // Guardar archivo en el sistema de archivos
-           await saveFileToDisk(
-             imageBuffer,
-             mainImageId,
-             `product-${savedProduct.id}-main.jpg`
-           );
+        // Asegurar que siempre tengamos un buffer de imagen
+        if (!mainImageBuffer) {
+          mainImageBuffer = createLocalPlaceholderImage(productData.name);
+          imageExtension = '.svg';
+          imageMimetype = 'image/svg+xml';
+        }
 
-           // Construir la ruta completa: products/id.jpg
-           const mainImagePath = `products/${mainImageId}.jpg`;
+        // Generar ID único para el archivo
+        const mainImageId = randomUUID();
+        
+        // Guardar archivo en el sistema de archivos
+        await saveFileToDisk(
+          mainImageBuffer,
+          mainImageId,
+          `product-${savedProduct.id}-main${imageExtension}`
+        );
 
-           const imageFile = filesRepository.create({
-             id: mainImageId,
-             filename: `product-${savedProduct.id}-main.jpg`,
-             mimetype: 'image/jpeg',
-             path_file: mainImagePath, // Guardamos la ruta completa: carpeta/id.extensión
-             parent_id: savedProduct.id,
-             parent_type: GlobalTypesFiles.PRODUCT,
-             is_main: true,
-             status: GlobalStatus.ACTIVE,
-           });
+        // Construir la ruta completa: products/id.extensión
+        const mainImagePath = `products/${mainImageId}${imageExtension}`;
 
-           await filesRepository.save(imageFile);
+        const imageFile = filesRepository.create({
+          id: mainImageId,
+          filename: `product-${savedProduct.id}-main${imageExtension}`,
+          mimetype: imageMimetype,
+          path_file: mainImagePath,
+          parent_id: savedProduct.id,
+          parent_type: GlobalTypesFiles.PRODUCT,
+          is_main: true,
+          status: GlobalStatus.ACTIVE,
+        });
+
+        await filesRepository.save(imageFile);
+        console.log(`  ✅ Imagen principal creada para: ${productData.name}`);
 
            // Agregar 1-3 imágenes adicionales aleatoriamente
            const numAdditionalImages = Math.floor(Math.random() * 3) + 1;
@@ -556,10 +596,6 @@ async function seedProducts() {
            if ((i + 1) % 10 === 0) {
              console.log(`✅ Procesados ${i + 1}/${totalProducts} productos...`);
            }
-         } catch (imageError) {
-           console.warn(`⚠️  Error al descargar imagen para producto ${savedProduct.id}: ${imageError}`);
-           // Continuar aunque falle la imagen - el producto se crea sin imagen
-         }
       } catch (error) {
         failed++;
         console.error(`❌ Error al crear producto ${i + 1}:`, error);

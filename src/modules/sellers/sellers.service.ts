@@ -68,7 +68,7 @@ export class SellersService {
     const countProducts = await this.productsService.getCountProductsBySellerId(seller.id);
     return {
       ...seller,
-      logo_image_path: files[0].path_file,
+      logo_image_path: files && files.length > 0 ? files[0].path_file : null,
       count_products: countProducts,
     };
   }
@@ -114,7 +114,7 @@ export class SellersService {
     const files = await this.filesService.getByParentIdAndActive(updatedSeller.id);
     return {
       ...updatedSeller,
-      logo_image_path: files[0].path_file,
+      logo_image_path: files && files.length > 0 ? files[0].path_file : null,
     };
   }
 

@@ -3,7 +3,17 @@ import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Usar process.cwd() para obtener la raíz del proyecto (funciona tanto en desarrollo como en producción)
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+// Registrar tsconfig-paths para resolver alias de rutas (src/...)
+import { register } from 'tsconfig-paths';
+import * as tsConfig from '../../tsconfig.json';
+
+register({
+  baseUrl: path.resolve(__dirname, '../..'),
+  paths: (tsConfig as any).compilerOptions?.paths || {},
+});
 
 const dbHost = process.env.DB_HOST as string;
 const dbPort = parseInt(process.env.DB_PORT || '5432', 10);

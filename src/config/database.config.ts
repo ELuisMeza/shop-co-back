@@ -2,7 +2,8 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Usar process.cwd() para obtener la raíz del proyecto (funciona tanto en desarrollo como en producción)
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 // Validar que las variables de entorno requeridas estén definidas
 const requiredEnvVars = ['DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_NAME'];
@@ -21,7 +22,9 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   database: process.env.DB_NAME!,
   schema: process.env.DB_SCHEMA || 'public',
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  synchronize: process.env.DB_SYNCHRONIZE === 'true',
+  synchronize: false, // Desactivado: usar migraciones en lugar de synchronize
+  migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+  migrationsRun: false, // Las migraciones se ejecutan manualmente con npm run migration:run
   logging: process.env.DB_LOGGING === 'true',
   extra: {
     // Configuración específica para PostgreSQL
