@@ -69,6 +69,7 @@ export class CartItemsService {
       .leftJoin('files', 'f', 'f.parent_id = p.id AND f.is_main = true')
       .where('cart_items.user_id = :user_id', { user_id }) 
       .select([
+        'p.seller_id AS seller_id',
         'p.id AS product_id',
         'p.name AS product_name',
         'p.price AS product_price',
