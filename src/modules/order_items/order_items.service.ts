@@ -25,4 +25,8 @@ export class OrderItemsService {
     await this.orderItemsRepository.save(orderItem);
     return orderItem;
   }
+
+  async getOrderItemsByOrderId(order_id: string): Promise<OrderItemsEntity[]> {
+    return await this.orderItemsRepository.find({ where: { order_id: order_id }, relations: ['product', 'product.seller'] });
+  }
 }

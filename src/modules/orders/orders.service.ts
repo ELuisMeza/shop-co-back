@@ -9,6 +9,7 @@ import { CheckoutPaymentIntent, Order, OrderRequest, OrderTrackerStatus, Payment
 import { CartItemsService } from '../cart_items/cart_items.service';
 import { UsersService } from '../users/users.service';
 import { SellersService } from '../sellers/sellers.service';
+import { ProductsService } from '../products/products.service';
 
 @Injectable()
 export class OrdersService {
@@ -23,6 +24,7 @@ export class OrdersService {
     private readonly cartItemsService: CartItemsService,
     private readonly usersService: UsersService,
     private readonly sellersService: SellersService,
+    private readonly productsService: ProductsService,
   ) {}
 
   async createOrderPending(createOrderDto: CreateOrderDto, buyer_id: string) {
@@ -100,6 +102,13 @@ export class OrdersService {
     }
     order.paid_at = new Date();
     await this.ordersRepository.save(order);
+    
+    const orderItems = await this.orderItemsService.getOrderItemsByOrderId(order.id);
+    
+    orderItems.forEach(async (item) => {
+      await this.productsService.reduceStock(item.product_id, item.quantity);
+      await this.sellersService.increaseSales(item.product.seller_id, item.quantity, item.total_price);
+    });
 
     await this.cartItemsService.removeAllProductsFromCart(order.buyer_id);
 

@@ -8,9 +8,10 @@ import { OrderItemsModule } from '../order_items/order_items.module';
 import { CartItemsModule } from '../cart_items/cart_items.module';
 import { UsersModule } from '../users/users.module';
 import { SellersModule } from '../sellers/sellers.module';
+import { ProductsModule } from '../products/products.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrdersEntity]), PaypalModule, OrderItemsModule, CartItemsModule, UsersModule, SellersModule],
+  imports: [TypeOrmModule.forFeature([OrdersEntity]), PaypalModule, OrderItemsModule, CartItemsModule, UsersModule, SellersModule, ProductsModule],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],

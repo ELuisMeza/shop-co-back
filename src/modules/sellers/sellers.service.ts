@@ -7,6 +7,7 @@ import { CreateUserSellerDto } from '../auth/dto/create-user.dto';
 import { FilesService } from '../files/files.service';
 import { UploadFilesData } from '../files/dto/files.dto';
 import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
+import { ProductsService } from '../products/products.service';
 
 @Injectable()
 export class SellersService {
@@ -14,6 +15,7 @@ export class SellersService {
     @InjectRepository(SellersEntity)
     private readonly sellersRepository: Repository<SellersEntity>,
     private readonly filesService: FilesService,
+    private readonly productsService: ProductsService,
   ) {}
 
   async createSeller(createSellerDto: CreateUserSellerDto, user_id: string, logoFile?: Express.Multer.File): Promise<SellersEntity> {
@@ -63,9 +65,11 @@ export class SellersService {
     }
 
     const files = await this.filesService.getByParentIdAndActive(seller.id);
+    const countProducts = await this.productsService.getCountProductsBySellerId(seller.id);
     return {
       ...seller,
       logo_image_path: files[0].path_file,
+      count_products: countProducts,
     };
   }
 
@@ -89,9 +93,6 @@ export class SellersService {
     if (Object.keys(updateData).length > 0) {
       await this.sellersRepository.update(id, updateData);
     }
-
-    console.log('se actualizo el seller');
-
 
     if (logoFile) {
       const files = await this.filesService.getByParentIdAndActive(seller.id);
@@ -122,6 +123,21 @@ export class SellersService {
     if (!seller) {
       throw new NotFoundException('El usuario no es vendedor');
     }
+    return seller;
+  }
+
+  async increaseSales(seller_id: string, quantity: number, price_total: number | string) {
+    const seller = await this.getById(seller_id);
+    seller.total_sales += quantity;
+    // Convertir ambos valores a números para evitar concatenación de strings
+    const currentMoneyRaised = typeof seller.money_raised === 'string' 
+      ? parseFloat(seller.money_raised) 
+      : Number(seller.money_raised) || 0;
+    const priceToAdd = typeof price_total === 'string' 
+      ? parseFloat(price_total) 
+      : Number(price_total) || 0;
+    seller.money_raised = currentMoneyRaised + priceToAdd;
+    await this.sellersRepository.save(seller);
     return seller;
   }
 }

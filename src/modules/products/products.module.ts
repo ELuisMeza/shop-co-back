@@ -12,7 +12,7 @@ import { ProductCategoriesModule } from '../product-categories/product-categorie
 @Module({
   imports: [
     TypeOrmModule.forFeature([ProductsEntity, FilesEntity]),
-    SellersModule,
+    forwardRef(() => SellersModule),
     CategoriesModule,
     FilesModule,
     forwardRef(() => ProductCategoriesModule),

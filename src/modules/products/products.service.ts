@@ -21,6 +21,7 @@ export class ProductsService {
     private readonly filesRepository: Repository<FilesEntity>,
     @Inject(forwardRef(() => ProductCategoriesService))
     private readonly productCategoriesService: ProductCategoriesService,
+    @Inject(forwardRef(() => SellersService))
     private readonly sellersService: SellersService,
     private readonly categoriesService: CategoriesService,
     private readonly filesService: FilesService,
@@ -301,6 +302,19 @@ export class ProductsService {
     }
     await this.productsRepository.update(id, { status: GlobalStatus.ACTIVE === product.status ? GlobalStatus.INACTIVE : GlobalStatus.ACTIVE });
     return await this.getById(id);
+  }
+
+  async reduceStock(id: string, quantity: number) {
+    const product = await this.getById(id);
+    if (!product) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+    await this.productsRepository.update(id, { stock: product.stock - quantity });
+    return await this.getById(id);
+  }
+
+  async getCountProductsBySellerId(seller_id: string) {
+    return await this.productsRepository.count({ where: { seller_id, status: GlobalStatus.ACTIVE } });
   }
 } 
 

@@ -31,6 +31,9 @@ export class SellersEntity {
   @Column({ type: 'int', default: 0 })
   total_sales: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0.0 })
+  money_raised: number;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
