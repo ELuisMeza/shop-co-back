@@ -7,6 +7,8 @@ import { PaypalService } from '../paypal/paypal.service';
 import { OrderItemsService } from '../order_items/order_items.service';
 import { CheckoutPaymentIntent, Order, OrderRequest, OrderTrackerStatus, PaymentTokenStatus, OrderApplicationContext } from '@paypal/paypal-server-sdk';
 import { CartItemsService } from '../cart_items/cart_items.service';
+import { UsersService } from '../users/users.service';
+import { SellersService } from '../sellers/sellers.service';
 
 @Injectable()
 export class OrdersService {
@@ -19,11 +21,12 @@ export class OrdersService {
     private readonly paypalService: PaypalService,
     private readonly orderItemsService: OrderItemsService,
     private readonly cartItemsService: CartItemsService,
+    private readonly usersService: UsersService,
+    private readonly sellersService: SellersService,
   ) {}
 
   async createOrderPending(createOrderDto: CreateOrderDto, buyer_id: string) {
-    // PayPal redirigirá aquí después del pago, añadiendo automáticamente ?token=...&PayerID=...
-    const returnUrl = `${this.frontendUrl}/store/cart/order`;
+    const returnUrl = `${this.frontendUrl}/buyer/confirm-order`;
 
     const paypalOrderRequest: OrderRequest = {
       intent: CheckoutPaymentIntent.Capture,
@@ -111,5 +114,134 @@ export class OrdersService {
         currency: order.currency,
       },
     };
+  }
+
+  async getMyOrdersBuyer(buyer_id: string) {
+
+      const user = await this.usersService.getById(buyer_id);
+      if(user.role.name !== 'buyer') {
+        throw new BadRequestException('El usuario no es un comprador');
+      }
+
+    const rawResults = await this.ordersRepository.createQueryBuilder('o')
+      .select([
+        'o.id as order_id',
+        'o.paypal_order_id as paypal_id',
+        'o.payment_id as payment_id',
+        'o.paid_at as paid_at',
+        'o.created_at as created_at',
+        'oi.id as order_item_id',
+        's.shop_name as seller_name',
+        'p.name as product_name',
+        'oi.quantity as quantity',
+        'oi.unit_price as unit_price',
+        'oi.total_price as total_price',
+      ])
+      .leftJoin('order_items', 'oi', 'oi.order_id = o.id')
+      .leftJoin('products', 'p', 'p.id = oi.product_id')
+      .leftJoin('sellers', 's', 's.id = p.seller_id')
+      .where('o.buyer_id = :buyer_id', { buyer_id })
+      .andWhere('o.status = :status', { status: OrderTrackerStatus.Shipped })
+      .andWhere('o.payment_status = :payment_status', { payment_status: PaymentTokenStatus.Approved })
+      .orderBy('o.created_at', 'DESC')
+      .getRawMany();
+
+    // Agrupar por order_id
+    const groupedOrders = rawResults.reduce((acc, row) => {
+      const orderId = row.order_id;
+      
+      if (!acc[orderId]) {
+        acc[orderId] = {
+          order_id: row.order_id,
+          paypal_id: row.paypal_id,
+          payment_id: row.payment_id,
+          total_amount: 0,
+          paid_at: row.paid_at,
+          created_at: row.created_at,
+          items: [],
+        };
+      }
+
+      // Solo agregar item si existe order_item_id (evita duplicados cuando no hay items)
+      if (row.order_item_id) {
+        acc[orderId].items.push({
+          order_item_id: row.order_item_id,
+          seller_name: row.seller_name,
+          product_name: row.product_name,
+          quantity: row.quantity,
+          unit_price: row.unit_price,
+          total_price: row.total_price,
+        });
+        // Sumar el total_price al total_amount
+        acc[orderId].total_amount += parseFloat(row.total_price) || 0;
+      }
+
+      return acc;
+    }, {});
+
+    return Object.values(groupedOrders);
+  }
+
+  async getSellerOrders(user_id: string) {
+    const seller = await this.sellersService.getByUserId(user_id);
+
+  const rawResults = await this.ordersRepository.createQueryBuilder('o')
+    .select([
+      'o.id as order_id',
+      'o.paypal_order_id as paypal_id',
+      'o.payment_id as payment_id',
+      'o.paid_at as paid_at',
+      'o.created_at as created_at',
+      'oi.id as order_item_id',
+      'u.name as buyer_name',
+      'p.name as product_name',
+      'oi.quantity as quantity',
+      'oi.unit_price as unit_price',
+      'oi.total_price as total_price',
+    ])
+    .leftJoin('order_items', 'oi', 'oi.order_id = o.id')
+    .leftJoin('products', 'p', 'p.id = oi.product_id')
+    .leftJoin('sellers', 's', 's.id = p.seller_id')
+    .leftJoin('users', 'u', 'u.id = o.buyer_id')
+    .where('s.id = :seller_id', { seller_id: seller.id })
+    .andWhere('o.status = :status', { status: OrderTrackerStatus.Shipped })
+    .andWhere('o.payment_status = :payment_status', { payment_status: PaymentTokenStatus.Approved })
+    .orderBy('o.created_at', 'DESC')
+    .getRawMany();
+
+  // Agrupar por order_id
+  const groupedOrders = rawResults.reduce((acc, row) => {
+    const orderId = row.order_id;
+    
+    if (!acc[orderId]) {
+      acc[orderId] = {
+        order_id: row.order_id,
+        paypal_id: row.paypal_id,
+        payment_id: row.payment_id,
+        total_amount: 0,
+        paid_at: row.paid_at,
+        created_at: row.created_at,
+        items: [],
+      };
+    }
+
+    // Solo agregar item si existe order_item_id (evita duplicados cuando no hay items)
+    if (row.order_item_id) {
+      acc[orderId].items.push({
+        order_item_id: row.order_item_id,
+        buyer_name: row.buyer_name,
+        product_name: row.product_name,
+        quantity: row.quantity,
+        unit_price: row.unit_price,
+        total_price: row.total_price,
+      });
+      // Sumar el total_price al total_amount
+      acc[orderId].total_amount += parseFloat(row.total_price) || 0;
+    }
+
+    return acc;
+  }, {});
+
+  return Object.values(groupedOrders);
   }
 }

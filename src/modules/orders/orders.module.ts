@@ -6,9 +6,11 @@ import { OrdersEntity } from './orders.entity';
 import { PaypalModule } from '../paypal/paypal.module';
 import { OrderItemsModule } from '../order_items/order_items.module';
 import { CartItemsModule } from '../cart_items/cart_items.module';
+import { UsersModule } from '../users/users.module';
+import { SellersModule } from '../sellers/sellers.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([OrdersEntity]), PaypalModule, OrderItemsModule, CartItemsModule],
+  imports: [TypeOrmModule.forFeature([OrdersEntity]), PaypalModule, OrderItemsModule, CartItemsModule, UsersModule, SellersModule],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],

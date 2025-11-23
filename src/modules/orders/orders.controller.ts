@@ -36,4 +36,20 @@ export class OrdersController {
 
     return this.ordersService.captureOrder(token);
   }
+
+  @Get('buyer/my-orders')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Obtener todas las ordenes del usuario' })
+  @ApiOkResponse({ description: 'Retorna todas las ordenes del usuario' })
+  async getBuyerOrders(@Req() req: RequestWithUser) {
+    return this.ordersService.getMyOrdersBuyer(req.user.userId);
+  }
+
+  @Get('seller/my-orders')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Obtener todas las ordenes del vendedor' })
+  @ApiOkResponse({ description: 'Retorna todas las ordenes del vendedor' })
+  async getSellerOrders(@Req() req: RequestWithUser) {
+    return this.ordersService.getSellerOrders(req.user.userId);
+  }
 }
