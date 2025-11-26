@@ -15,6 +15,10 @@ Backend de **Shop Co**, una aplicación de comercio electrónico desarrollada co
 - 🌱 Seeds para datos iniciales
 - 📚 Documentación Swagger/OpenAPI
 
+## 🐳 Docker
+
+Si prefieres ejecutar el proyecto con Docker, consulta la documentación específica en [README.Docker.md](./README.Docker.md).
+
 ## Requisitos Previos
 
 - Node.js (v18 o superior)
@@ -269,85 +273,6 @@ npm run test:debug
    ```bash
    npm run seed:initial
    ```
-
-### Opciones de Despliegue
-
-#### Opción 1: Servidor VPS/Dedicado
-
-1. Instala Node.js y PostgreSQL en el servidor
-2. Clona el repositorio
-3. Configura las variables de entorno
-4. Ejecuta `npm install --production`
-5. Compila con `npm run build`
-6. Ejecuta migraciones
-7. Inicia con `npm run start:prod` o usa PM2:
-
-```bash
-npm install -g pm2
-pm2 start dist/main.js --name shop-co-back
-pm2 save
-pm2 startup
-```
-
-#### Opción 2: Docker
-
-Crea un `Dockerfile`:
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["node", "dist/main.js"]
-```
-
-Y un `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-    env_file:
-      - .env
-    depends_on:
-      - db
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: nombre_de_tu_bd
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: contraseña_bd
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-volumes:
-  postgres_data:
-```
-
-#### Opción 3: Plataformas Cloud
-
-- **Heroku:** Usa el buildpack de Node.js
-- **AWS (Mau):** Sigue la [documentación oficial de NestJS Mau](https://mau.nestjs.com)
-- **Railway/Render:** Configura el build command y start command
-
-### Checklist de Despliegue
-
-- [ ] Variables de entorno configuradas
-- [ ] Base de datos creada y accesible
-- [ ] Migraciones ejecutadas
-- [ ] Proyecto compilado (`npm run build`)
-- [ ] Tests pasando
-- [ ] CORS configurado correctamente
-- [ ] HTTPS habilitado (recomendado)
-- [ ] Logging configurado
-- [ ] Backup de base de datos configurado
 
 ## Comandos Útiles
 
