@@ -14,7 +14,7 @@ import { ProductsService } from '../products/products.service';
 @Injectable()
 export class OrdersService {
 
-  private readonly frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  private readonly frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
 
   constructor(
     @InjectRepository(OrdersEntity)

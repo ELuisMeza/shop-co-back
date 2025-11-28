@@ -40,6 +40,9 @@ services:
       DB_LOGGING: ${DB_LOGGING:-false}
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
+      PAYPAL_ENVIRONMENT: ${PAYPAL_ENVIRONMENT:-sandbox}
     ports:
       - "${PORT:-3000}:3000"
     volumes:
