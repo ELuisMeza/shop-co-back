@@ -7,6 +7,7 @@ import { UsersEntity } from '../modules/users/users.entity';
 import { SellersEntity } from '../modules/sellers/sellers.entity';
 import { CategoriesEntity } from '../modules/categories/categories.entity';
 import { GlobalStatus } from '../globals/enums/global-status.enum';
+import { postgresSslFromEnv } from '../config/postgres-ssl.util';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -19,6 +20,7 @@ async function seedInitial() {
     password: process.env.DB_PASSWORD!,
     database: process.env.DB_NAME!,
     schema: process.env.DB_SCHEMA || 'public',
+    ssl: postgresSslFromEnv(),
     entities: [
       RolesEntity,
       UsersEntity,

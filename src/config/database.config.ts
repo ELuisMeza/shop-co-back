@@ -1,6 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { postgresSslFromEnv } from './postgres-ssl.util';
 
 // Usar process.cwd() para obtener la raíz del proyecto (funciona tanto en desarrollo como en producción)
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -21,6 +22,7 @@ export const typeOrmConfig: TypeOrmModuleOptions = {
   password: process.env.DB_PASSWORD!,
   database: process.env.DB_NAME!,
   schema: process.env.DB_SCHEMA || 'public',
+  ssl: postgresSslFromEnv(),
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   synchronize: false, // Desactivado: usar migraciones en lugar de synchronize
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],

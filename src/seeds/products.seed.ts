@@ -13,6 +13,7 @@ import { UsersEntity } from '../modules/users/users.entity';
 import { RolesEntity } from '../modules/roles/roles.entity';
 import { GlobalStatus } from '../globals/enums/global-status.enum';
 import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
+import { postgresSslFromEnv } from '../config/postgres-ssl.util';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -357,6 +358,7 @@ async function seedProducts() {
     password: process.env.DB_PASSWORD!,
     database: process.env.DB_NAME!,
     schema: process.env.DB_SCHEMA || 'public',
+    ssl: postgresSslFromEnv(),
     entities: [
       ProductsEntity,
       FilesEntity,
@@ -431,15 +433,19 @@ async function seedProducts() {
       console.log('¿Deseas continuar de todas formas? Esto agregará más productos.');
     }
 
-    console.log('\n🚀 Iniciando seed de productos...\n');
-
-    const fromCli = parseOptionalProductSeedCount();
+    const requestedCount = parseOptionalProductSeedCount();
     const totalProducts =
-      fromCli ?? Math.max(MAX_CLI_PRODUCT_COUNT, PRODUCTS_DATA.length);
-    if (fromCli !== undefined) {
-      console.log(`📦 Modo limitado: se crearán ${totalProducts} producto(s).\n`);
+      requestedCount !== undefined
+        ? requestedCount
+        : Math.max(MAX_CLI_PRODUCT_COUNT, PRODUCTS_DATA.length);
+
+    console.log('\n🚀 Iniciando seed de productos...\n');
+    if (requestedCount !== undefined) {
+      console.log(
+        `📌 Insertando ${totalProducts} producto(s) (CLI: 1–${MAX_CLI_PRODUCT_COUNT}).\n`,
+      );
     } else {
-      console.log(`📦 Modo completo: se crearán ${totalProducts} producto(s).\n`);
+      console.log(`📌 Insertando el catálogo completo: ${totalProducts} producto(s).\n`);
     }
     let created = 0;
     let failed = 0;

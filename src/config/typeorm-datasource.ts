@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { postgresSslFromEnv } from './postgres-ssl.util';
 
 // Usar process.cwd() para obtener la raíz del proyecto (funciona tanto en desarrollo como en producción)
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -30,6 +31,7 @@ export default new DataSource({
   password: dbPass,
   database: dbName,
   schema: dbSchema,
+  ssl: postgresSslFromEnv(),
   entities: [path.resolve(__dirname, '../**/*.entity.{ts,js}')],
   migrations: [path.resolve(__dirname, '../migrations/*.{ts,js}')],
   synchronize: false,
