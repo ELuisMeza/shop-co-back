@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional, IsString, IsInt, Min, IsArray, IsUUID, IsNumber, IsBoolean, IsEnum } from "class-validator";
 import { Type } from "class-transformer";
-import { GlobalStatus } from "src/globals/enums/global-status.enum";
+import { GlobalStatus } from "../../../globals/enums/global-status.enum";
 
 export class SearchProductsDto {
   @ApiProperty({ 

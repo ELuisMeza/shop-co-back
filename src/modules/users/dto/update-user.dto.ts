@@ -1,6 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString } from "class-validator";
-import { GlobalStatus } from "src/globals/enums/global-status.enum";
 
 export class UpdateUserDto {
   @ApiProperty({ example: 'Juan', description: 'Nombre del usuario' })

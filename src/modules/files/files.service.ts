@@ -3,7 +3,7 @@ import { FilesEntity } from './files.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { UpdateFileDto } from './dto/update-file.dto';
-import { GlobalStatus } from 'src/globals/enums/global-status.enum';
+import { GlobalStatus } from '../../globals/enums/global-status.enum';
 import { UploadFilesData } from './dto/files.dto';
 import { StorageService } from '../../storage/storage.service';
 import { randomUUID } from 'crypto';

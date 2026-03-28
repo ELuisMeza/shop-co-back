@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Inject, Injectable, NotFoundExc
 import { UsersEntity } from './users.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { GlobalStatus } from 'src/globals/enums/global-status.enum';
+import { GlobalStatus } from '../../globals/enums/global-status.enum';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserSellerDto, CreateUserDto } from '../auth/dto/create-user.dto';
 import { SellersEntity } from '../sellers/sellers.entity';

@@ -1,4 +1,4 @@
-import { GlobalStatus } from "src/globals/enums/global-status.enum";
+import { GlobalStatus } from "../../globals/enums/global-status.enum";
 import { Column, PrimaryGeneratedColumn, Entity, ManyToOne, JoinColumn } from "typeorm";
 import { CategoriesEntity } from "../categories/categories.entity";
 import { SellersEntity } from "../sellers/sellers.entity";

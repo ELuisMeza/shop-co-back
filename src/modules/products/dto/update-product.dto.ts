@@ -1,7 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min, IsArray, IsUUID, ArrayMinSize, ValidateNested, IsBoolean } from "class-validator";
 import { Transform, Type, Expose, plainToInstance } from "class-transformer";
-import { GlobalStatus } from "src/globals/enums/global-status.enum";
 
 export class ImageMetadataDto {
   @ApiProperty({ example: 'file_1', description: 'ID del campo del archivo en FormData' })

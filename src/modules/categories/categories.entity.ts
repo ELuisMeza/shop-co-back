@@ -1,4 +1,4 @@
-import { GlobalStatus } from "src/globals/enums/global-status.enum";
+import { GlobalStatus } from "../../globals/enums/global-status.enum";
 import { Column, PrimaryGeneratedColumn, Entity } from "typeorm";
 
 @Entity({ name: 'categories' })
