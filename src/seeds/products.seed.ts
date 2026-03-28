@@ -16,6 +16,27 @@ import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+/** Máximo permitido cuando pasás cantidad por CLI: `npm run seed:products 10` */
+const MAX_CLI_PRODUCT_COUNT = 100;
+
+function parseOptionalProductSeedCount(): number | undefined {
+  const raw = process.argv[2];
+  if (raw === undefined || raw.trim() === '') return undefined;
+  const trimmed = raw.trim();
+  if (!/^\d+$/.test(trimmed)) {
+    console.error(
+      '❌ El argumento opcional debe ser un entero entre 1 y 100 (ej: npm run seed:products -- 10).',
+    );
+    process.exit(1);
+  }
+  const n = parseInt(trimmed, 10);
+  if (n < 1 || n > MAX_CLI_PRODUCT_COUNT) {
+    console.error(`❌ La cantidad debe estar entre 1 y ${MAX_CLI_PRODUCT_COUNT}.`);
+    process.exit(1);
+  }
+  return n;
+}
+
 // Tipo para los datos de producto
 type ProductData = {
   name: string;
@@ -412,7 +433,14 @@ async function seedProducts() {
 
     console.log('\n🚀 Iniciando seed de productos...\n');
 
-    const totalProducts = Math.max(100, PRODUCTS_DATA.length);
+    const fromCli = parseOptionalProductSeedCount();
+    const totalProducts =
+      fromCli ?? Math.max(MAX_CLI_PRODUCT_COUNT, PRODUCTS_DATA.length);
+    if (fromCli !== undefined) {
+      console.log(`📦 Modo limitado: se crearán ${totalProducts} producto(s).\n`);
+    } else {
+      console.log(`📦 Modo completo: se crearán ${totalProducts} producto(s).\n`);
+    }
     let created = 0;
     let failed = 0;
 
@@ -617,5 +645,5 @@ async function seedProducts() {
   }
 }
 
-// Ejecutar el seed
+// Ejecutar el seed (opcional: npm run seed:products -- 10)
 seedProducts();
