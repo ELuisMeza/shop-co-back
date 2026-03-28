@@ -8,7 +8,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { RequestWithUser } from '../auth/dto/request-with-user.interface';
-import { FileUploadInterceptor } from 'src/interceptors/file-upload.interceptor';
+import { FileUploadInterceptor } from '../../interceptors/file-upload.interceptor';
 type MulterFile = Express.Multer.File;
 
 @ApiTags('Vendedores')

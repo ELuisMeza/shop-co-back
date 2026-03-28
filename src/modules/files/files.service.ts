@@ -7,7 +7,7 @@ import { GlobalStatus } from '../../globals/enums/global-status.enum';
 import { UploadFilesData } from './dto/files.dto';
 import { StorageService } from '../../storage/storage.service';
 import { randomUUID } from 'crypto';
-import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
+import { GlobalTypesFiles } from '../../globals/enums/global-types-files';
 
 @Injectable()
 export class FilesService {

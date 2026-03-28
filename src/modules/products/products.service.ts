@@ -10,7 +10,7 @@ import { SearchProductsDto } from './dto/search-products.dto';
 import { FilesEntity } from '../files/files.entity';
 import { FilesService } from '../files/files.service';
 import { ProductCategoriesService } from '../product-categories/product-categories.service';
-import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
+import { GlobalTypesFiles } from '../../globals/enums/global-types-files';
 
 @Injectable()
 export class ProductsService {

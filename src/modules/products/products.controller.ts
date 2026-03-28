@@ -7,7 +7,7 @@ import { SearchProductsDto } from './dto/search-products.dto';
 import type { RequestWithUser } from '../auth/dto/request-with-user.interface';
 import { SellersService } from '../sellers/sellers.service';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { FileUploadInterceptor } from 'src/interceptors/file-upload.interceptor';
+import { FileUploadInterceptor } from '../../interceptors/file-upload.interceptor';
 import type { Request } from 'express';
 import { parsedImageData } from './utils/parsedImageData';
 import { CreateOrUpdateProductDto } from './dto/update-product.dto';

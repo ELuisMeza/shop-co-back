@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsUUID, IsString, IsNotEmpty, IsEnum } from "class-validator";
-import { GlobalTypesFiles } from "src/globals/enums/global-types-files";
+import { GlobalTypesFiles } from "../../../globals/enums/global-types-files";
 
 
 export class CreateFileDto {

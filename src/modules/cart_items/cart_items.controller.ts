@@ -4,7 +4,7 @@ import { AddCartItemDto } from './dto/add-cart-item.dto';
 import { RemoveCartItemDto } from './dto/remove-cart-item.dto';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { RequestWithUser } from 'src/modules/auth/dto/request-with-user.interface';
+import type { RequestWithUser } from '../auth/dto/request-with-user.interface';
 
 @ApiTags('Carrito')
 @Controller('cart-items')

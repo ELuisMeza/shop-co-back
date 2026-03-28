@@ -6,7 +6,7 @@ import { UpdateSellerDto } from './dto/update-seller.dto';
 import { CreateUserSellerDto } from '../auth/dto/create-user.dto';
 import { FilesService } from '../files/files.service';
 import { UploadFilesData } from '../files/dto/files.dto';
-import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
+import { GlobalTypesFiles } from '../../globals/enums/global-types-files';
 import { ProductsService } from '../products/products.service';
 
 @Injectable()

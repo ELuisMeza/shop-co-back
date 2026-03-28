@@ -12,7 +12,7 @@ import { ProductCategoriesEntity } from '../modules/product-categories/product-c
 import { UsersEntity } from '../modules/users/users.entity';
 import { RolesEntity } from '../modules/roles/roles.entity';
 import { GlobalStatus } from '../globals/enums/global-status.enum';
-import { GlobalTypesFiles } from 'src/globals/enums/global-types-files';
+import { GlobalTypesFiles } from '../globals/enums/global-types-files';
 import { postgresSslFromEnv } from '../config/postgres-ssl.util';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
