@@ -10,7 +10,7 @@ Backend de **Shop Co**, una aplicación de comercio electrónico desarrollada co
 - 📦 Gestión de productos y categorías
 - 🛒 Carrito de compras
 - 💳 Procesamiento de pagos con PayPal
-- 📄 Gestión de archivos e imágenes
+- 📄 Gestión de archivos e imágenes (almacenamiento en Cloudinary)
 - 📊 Migraciones de base de datos con TypeORM
 - 🌱 Seeds para datos iniciales
 - 📚 Documentación Swagger/OpenAPI
@@ -58,6 +58,9 @@ PAYPAL_CLIENT_ID=cliente_paypal
 PAYPAL_CLIENT_SECRET=secreto_paypal
 PAYPAL_MODE=sandbox
 FRONTEND_URL=la_ruta_de_tu_front
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_api_key
+CLOUDINARY_API_SECRET=tu_api_secret
 ```
 
 Opcional: si necesitas ver las consultas SQL en consola, añade `DB_LOGGING=true` (por defecto el proyecto no la define y equivale a desactivado).
@@ -80,6 +83,9 @@ Opcional: si necesitas ver las consultas SQL en consola, añade `DB_LOGGING=true
 | `PAYPAL_CLIENT_SECRET` | Secreto de cliente de PayPal | ✅ | - |
 | `PAYPAL_MODE` | Modo de PayPal (sandbox/live) | ❌ | sandbox |
 | `FRONTEND_URL` | URL del frontend para CORS y redirecciones | ❌ | http://localhost:3000 |
+| `CLOUDINARY_CLOUD_NAME` | Nombre del cloud en Cloudinary (aparece en el dashboard y en las URLs de tus assets). Se usa para inicializar el SDK y para generar las URLs públicas (`https`) de las imágenes a partir del `public_id` guardado en base de datos | ✅ | - |
+| `CLOUDINARY_API_KEY` | Clave pública de la API de Cloudinary. Junto con el secreto, autentica las operaciones del servidor (subir y eliminar imágenes) | ✅ | - |
+| `CLOUDINARY_API_SECRET` | Secreto de la API de Cloudinary (solo en el backend; no exponerlo al cliente). Se usa para firmar las peticiones de subida y borrado de archivos en Cloudinary | ✅ | - |
 
 ### 3. Crear la Base de Datos
 
@@ -120,7 +126,8 @@ back/
 │   ├── seeds/              # Seeds para datos iniciales
 │   │   ├── initial.seed.ts
 │   │   └── products.seed.ts
-│   ├── storage/           # Servicio de almacenamiento
+│   ├── cloudinary/        # Integración Cloudinary (subida, borrado, URLs)
+│   ├── storage/           # Utilidades de almacenamiento local (p. ej. seeds)
 │   ├── app.module.ts      # Módulo principal
 │   └── main.ts            # Punto de entrada
 ├── uploads/               # Archivos subidos (imágenes, etc.)
@@ -254,6 +261,7 @@ npm run test:debug
    - Usa valores seguros para `JWT_SECRET`
    - Si la base de datos está en la nube (Neon, RDS, etc.), define `DB_SSL=true`
    - Configura `PAYPAL_MODE=live` para pagos reales
+   - Configura `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` y `CLOUDINARY_API_SECRET` con las credenciales de tu cuenta Cloudinary (imágenes de productos, logos de vendedores, etc.)
    - Establece `DB_LOGGING=false` en producción (o no definas `DB_LOGGING`)
 
 2. **Compilar el proyecto:**

@@ -16,6 +16,7 @@ import { CartItemsModule } from './modules/cart_items/cart_items.module';
 import { PaypalModule } from './modules/paypal/paypal.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { OrderItemsModule } from './modules/order_items/order_items.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { OrderItemsModule } from './modules/order_items/order_items.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    CloudinaryModule,
     TypeOrmModule.forRoot(typeOrmConfig),
     UsersModule,
     AuthModule,

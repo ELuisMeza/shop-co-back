@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { CartItemsEntity } from './cart_items.entity';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
 import { ProductsService } from '../products/products.service';
+import { toDeliveryUrl } from '../../cloudinary/cloudinary-delivery';
 
 @Injectable()
 export class CartItemsService {
@@ -63,11 +64,11 @@ export class CartItemsService {
   }
 
   async getCartItems(user_id: string) {
-    return this.cartItemsRepository
+    const rows = await this.cartItemsRepository
       .createQueryBuilder('cart_items')
       .leftJoin('products', 'p', 'p.id = cart_items.product_id')
       .leftJoin('files', 'f', 'f.parent_id = p.id AND f.is_main = true')
-      .where('cart_items.user_id = :user_id', { user_id }) 
+      .where('cart_items.user_id = :user_id', { user_id })
       .select([
         'p.seller_id AS seller_id',
         'p.id AS product_id',
@@ -78,6 +79,11 @@ export class CartItemsService {
         'cart_items.quantity AS quantity',
       ])
       .getRawMany();
+
+    return rows.map((row) => ({
+      ...row,
+      file_path: toDeliveryUrl(row.file_path) ?? row.file_path,
+    }));
   }
   
   async updateProductQuantity(product_id: string, user_id: string, quantity: number): Promise<{ message: string }> {

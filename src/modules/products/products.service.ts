@@ -11,6 +11,7 @@ import { FilesEntity } from '../files/files.entity';
 import { FilesService } from '../files/files.service';
 import { ProductCategoriesService } from '../product-categories/product-categories.service';
 import { GlobalTypesFiles } from '../../globals/enums/global-types-files';
+import { toDeliveryUrl } from '../../cloudinary/cloudinary-delivery';
 
 @Injectable()
 export class ProductsService {
@@ -267,8 +268,12 @@ export class ProductsService {
     const productWithCategories = await Promise.all(
       products.map(async (product) => {
         const categories = await this.productCategoriesService.getCategoriesByProductId(product.id);
-        return { ...product, categories: categories.map(category => category.name) };
-      })
+        return {
+          ...product,
+          image_path: toDeliveryUrl(product.image_path) ?? product.image_path,
+          categories: categories.map((category) => category.name),
+        };
+      }),
     );
 
     return {
