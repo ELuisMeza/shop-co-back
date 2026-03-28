@@ -41,32 +41,26 @@ Copia el archivo `.env.example` y crea un archivo `.env` en la raíz del proyect
 cp .env.example .env
 ```
 
-Luego, configura las siguientes variables de entorno en el archivo `.env`:
+Luego, configura las siguientes variables de entorno en el archivo `.env` (el archivo [`.env.example`](./.env.example) sirve de plantilla):
 
 ```env
-# JWT
 JWT_SECRET=tu_llave_secreta
-
-# Servidor
 PORT=3000
-
-# Base de Datos PostgreSQL
+# Postgres local: DB_SSL=false u omitir. Neon / nube: DB_SSL=true
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=contraseña_bd
 DB_NAME=nombre_de_tu_bd
 DB_SCHEMA=public
-DB_LOGGING=false
-
-# PayPal
+DB_SSL=false
 PAYPAL_CLIENT_ID=cliente_paypal
 PAYPAL_CLIENT_SECRET=secreto_paypal
 PAYPAL_MODE=sandbox
-
-# Frontend
 FRONTEND_URL=la_ruta_de_tu_front
 ```
+
+Opcional: si necesitas ver las consultas SQL en consola, añade `DB_LOGGING=true` (por defecto el proyecto no la define y equivale a desactivado).
 
 #### Descripción de Variables de Entorno
 
@@ -80,6 +74,7 @@ FRONTEND_URL=la_ruta_de_tu_front
 | `DB_PASSWORD` | Contraseña de la base de datos | ✅ | - |
 | `DB_NAME` | Nombre de la base de datos | ✅ | - |
 | `DB_SCHEMA` | Esquema de la base de datos | ❌ | public |
+| `DB_SSL` | TLS para la conexión a PostgreSQL. Usa `true` con Neon, RDS u otros hosts que exijan SSL; en local suele ser `false` u omitirse | ❌ | sin SSL si se omite o no es `true` |
 | `DB_LOGGING` | Habilitar logging de consultas SQL | ❌ | false |
 | `PAYPAL_CLIENT_ID` | ID de cliente de PayPal | ✅ | - |
 | `PAYPAL_CLIENT_SECRET` | Secreto de cliente de PayPal | ✅ | - |
@@ -101,6 +96,7 @@ back/
 ├── src/
 │   ├── config/              # Configuración de base de datos
 │   │   ├── database.config.ts
+│   │   ├── postgres-ssl.util.ts  # SSL según DB_SSL (Neon / local)
 │   │   └── typeorm-datasource.ts
 │   ├── globals/             # Enums y tipos globales
 │   │   └── enums/
@@ -256,8 +252,9 @@ npm run test:debug
 1. **Configurar variables de entorno de producción:**
    - Asegúrate de tener todas las variables de entorno configuradas
    - Usa valores seguros para `JWT_SECRET`
+   - Si la base de datos está en la nube (Neon, RDS, etc.), define `DB_SSL=true`
    - Configura `PAYPAL_MODE=live` para pagos reales
-   - Establece `DB_LOGGING=false` en producción
+   - Establece `DB_LOGGING=false` en producción (o no definas `DB_LOGGING`)
 
 2. **Compilar el proyecto:**
    ```bash
