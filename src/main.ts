@@ -38,9 +38,9 @@ async function bootstrap() {
   });
   
   app.enableCors({
-    origin: '*', 
+    origin: 'https://shop-co-frontend-three.vercel.app',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, 
+    credentials: true,
   });
 
   app.useGlobalPipes(new ValidationPipe({
